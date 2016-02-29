@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+        <title>Seattle Parking Accessibility</title>
+	</head>
+	
+	<body>
+        <div id="content_area">
+            <div id="introduction">
+                <h1>Seattle Parking Accessibility Application</h1>
+                <p>
+                    This web page is a location for finding accessible
+                    parking in Seattle. The user can filter out results
+                    using the forms in the sidebar.
+                </p>
+            </div>
+            <div id="sidebar">
+                <div id="filters">
+                    <h2>Filters</h2>
+                    <form>
+                        <fieldset>
+                            <label>Parking Types</label>
+                            <input type="checkbox" checked="checked">Parking Garages</input>
+                            <input type="checkbox">Parking Lots</input>
+                            <input type="checkbox">Street Parking</input>
+                        </fieldset>
+                        <fieldset>
+                            <label>Parking Near Destination</label>
+                            <input type="text" maxlength="20" placeholder="address"/>
+                            <input type="text" maxlength="10" placeholder="radius"  />
+                            <button>Enter</button>
+                        </fieldset>
+                        <fieldset>
+                            <label>Time</label>
+                            <select>
+                                <option selected="selected">1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                                <option>6</option>
+                            </select>
+                            <label>Date</label>
+                            <input type="date" />
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="legend">
+                    <h2>Legend</h2>
+                    <p>
+                        This is the location for the legend
+                    </p>
+                </div>
+            </div>
+            <div id="map"> 
+                <!--
+                    Google map will go here
+                -->
+            </div>
+        </div>
+	</body>
+</html>
