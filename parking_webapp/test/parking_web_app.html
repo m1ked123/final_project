@@ -21,29 +21,30 @@
                     <form>
                         <fieldset>
                             <label>Parking Types</label>
-                            <input type="checkbox" checked="checked">Parking Garages</input>
-                            <input type="checkbox">Parking Lots</input>
-                            <input type="checkbox">Street Parking</input>
+                            <input type="checkbox" checked="checked">
+                                Parking Garages
+                            </input>
+                            <input type="checkbox">
+                                Parking Lots
+                            </input>
+                            <input type="checkbox">
+                                Street Parking
+                            </input>
                         </fieldset>
                         <fieldset>
                             <label>Parking Near Destination</label>
-                            <input type="text" maxlength="20" placeholder="address"/>
-                            <input type="text" maxlength="10" placeholder="radius"  />
-                            <button>Enter</button>
+                            <input type="text" maxlength="100" 
+                                placeholder="address"/>
+                            <input type="number" min="0" max="10" 
+                                step=".1" placeholder="radius"  />
                         </fieldset>
                         <fieldset>
                             <label>Time</label>
-                            <select>
-                                <option selected="selected">1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                                <option>6</option>
-                            </select>
+                            <input type="time" />
                             <label>Date</label>
-                            <input type="date" />
+                            <input type="date"  />
                         </fieldset>
+                        <button type="submit">Apply Filter</button>
                     </form>
                 </div>
                 <div id="legend">
