@@ -1,7 +1,8 @@
 "use strict";
 (function() {
-    // var dataEndpoint = "https://data.seattle.gov/resource/3neb-8edu.json";
-    var dataEndpoint = "https://data.seattle.gov/resource/erv6-k5zv.json";
+    var dataEndpoint = "https://data.seattle.gov/resource/3neb-8edu.json";
+    // var dataEndpoint = "https://data.seattle.gov/resource/erv6-k5zv.json";
+	
 	window.onload = function() {
 		var button = document.getElementById("callEndpoint");
         button.onclick = makeCall;

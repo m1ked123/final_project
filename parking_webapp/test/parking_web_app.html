@@ -2,17 +2,27 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-        <title>Seattle Parking Accessibility</title>
+        <title>Seattle Parking Availability</title>
 	</head>
 	
 	<body>
         <div id="content_area">
             <div id="introduction">
-                <h1>Seattle Parking Accessibility Application</h1>
+                <h1>Seattle Parking Availability Application</h1>
                 <p>
                     This web page is a location for finding accessible
                     parking in Seattle. The user can filter out results
-                    using the forms in the sidebar.
+                    using the controls in the sidebar. By default, all
+                    parking garages in the City of Seattle are displayed 
+                    on the map; however, the user can toggle more
+                    parking types. The results on the map can be
+                    further filtered by providing a location around
+                    which to search for traffic within a given radius.
+                    These results can be further filtered by time
+                    contraints by only showing parking locations that
+                    are open/available at the given time. If no time
+                    or date is provided, parking locations that are
+                    currently open will be shown.
                 </p>
             </div>
             <div id="sidebar">
@@ -20,7 +30,7 @@
                     <h2>Filters</h2>
                     <form>
                         <fieldset>
-                            <label>Parking Types</label>
+                            <legend>Parking Types</legend>
                             <input type="checkbox" checked="checked">
                                 Parking Garages
                             </input>
@@ -30,21 +40,24 @@
                             <input type="checkbox">
                                 Street Parking
                             </input>
+                            <button type="submit">Apply</button>
                         </fieldset>
                         <fieldset>
-                            <label>Parking Near Destination</label>
-                            <input type="text" maxlength="100" 
+                            <legend>Parking Near Destination</legend>
+                            <input type="text" maxlength="200" 
                                 placeholder="address"/>
                             <input type="number" min="0" max="10" 
                                 step=".1" placeholder="radius"  />
+                            <button type="submit">Apply</button>
                         </fieldset>
                         <fieldset>
+                            <legend>Time Constraints</legend>
                             <label>Time</label>
-                            <input type="time" />
+                            <input type="time" placeholder="HH:mm"/>
                             <label>Date</label>
-                            <input type="date"  />
+                            <input type="date"  placeholder="MM/dd/yyyy"/>
+                            <button type="submit">Apply</button>
                         </fieldset>
-                        <button type="submit">Apply Filter</button>
                     </form>
                 </div>
                 <div id="legend">
