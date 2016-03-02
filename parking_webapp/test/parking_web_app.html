@@ -3,6 +3,8 @@
 	<head>
 		<meta charset="utf-8" />
         <title>Seattle Parking Availability</title>
+        <link rel="stylesheet" href="main_style.css" type="text/css" />
+        <script src="main_script.js" type="text/javascript"></script>
 	</head>
 	
 	<body>
@@ -28,37 +30,35 @@
             <div id="sidebar">
                 <div id="filters">
                     <h2>Filters</h2>
-                    <form>
-                        <fieldset>
-                            <legend>Parking Types</legend>
-                            <input type="checkbox" checked="checked">
-                                Parking Garages
-                            </input>
-                            <input type="checkbox">
-                                Parking Lots
-                            </input>
-                            <input type="checkbox">
-                                Street Parking
-                            </input>
-                            <button type="submit">Apply</button>
-                        </fieldset>
-                        <fieldset>
-                            <legend>Parking Near Destination</legend>
-                            <input type="text" maxlength="200" 
-                                placeholder="address"/>
-                            <input type="number" min="0" max="10" 
-                                step=".1" placeholder="radius"  />
-                            <button type="submit">Apply</button>
-                        </fieldset>
-                        <fieldset>
-                            <legend>Time Constraints</legend>
-                            <label>Time</label>
-                            <input type="time" placeholder="HH:mm"/>
-                            <label>Date</label>
-                            <input type="date"  placeholder="MM/dd/yyyy"/>
-                            <button type="submit">Apply</button>
-                        </fieldset>
-                    </form>
+                    <fieldset>
+                        <legend>Parking Types</legend>
+                        <input type="checkbox" checked="checked">
+                            Parking Garages
+                        </input>
+                        <input type="checkbox">
+                            Parking Lots
+                        </input>
+                        <input type="checkbox">
+                            Street Parking
+                        </input>
+                        <button type="submit">Apply</button>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Parking Near Destination</legend>
+                        <input type="text" maxlength="200" 
+                            placeholder="address" id="addr"/>
+                        <input type="number" min="0" max="10" 
+                            step=".1" placeholder="radius"  />
+                        <button type="submit" id="geocodeAddr">Apply</button>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Time Constraints</legend>
+                        <label>Time</label>
+                        <input type="time" placeholder="HH:mm"/>
+                        <label>Date</label>
+                        <input type="date"  placeholder="MM/dd/yyyy"/>
+                        <button type="submit">Apply</button>
+                    </fieldset>
                 </div>
                 <div id="legend">
                     <h2>Legend</h2>
