@@ -4,6 +4,7 @@
     var outputMap = null;
     var parkingGarageEndpoint = "https://data.seattle.gov/resource/3neb-8edu.json";
     var baseGeocodingUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=";
+    var currInfoWindow = null;
     
 	window.onload = function() {
 		var script = document.createElement("script");
@@ -75,9 +76,13 @@
             position: pointPosition,
             map: outputMap
         });
-        
         marker.addListener('click', function() {
+            marker.flyout
             flyout.open(outputMap, marker);
+            if (currInfoWindow) {
+                currInfoWindow.close();
+            }
+            currInfoWindow = flyout;
         });
     }
     
@@ -87,34 +92,94 @@
     
     function buildFlyoutText(facility) {
         var content = "<div id=\"content\">";
+        var level = 1;
+        var heading = "<h" + level + ">";
+        var closeHeading = "</h" + level + ">";
+        if (facility.fac_name) {
+            content += heading + facility.fac_name + closeHeading;
+            level++;
+        }
         if (facility.dea_facility_address) {
-            content += "<h1>" + facility.dea_facility_address + "</h1>";
+            heading = "<h" + level + ">";
+            closeHeading = "</h" + level + ">";
+            content += heading + facility.dea_facility_address + closeHeading;
+            level++;
         }
         if (facility.webname) {
-            content += "<h2>" + facility.webname + "</h2>"
+            heading = "<h" + level + ">";
+            closeHeading = "</h" + level + ">";
+            content += heading + facility.webname + closeHeading;
+            level++;
         }
-        /*
-            <ul>
-                <li>Available Lots: 5 out of 10</li>
-                <!--
-                    If there is a "vacant" property,
-                        put Available Lots: "vacant" out of "dea_stalls"
-                    Otherwise
-                        put Occupancy: "dea_stalls"
-                 -->
-                 <li>"fac_type"</li>
-                 <h3>Hours</h3>
-                 <li>HRS_MONFRI</li>
-                 <li>HRS_SAT</li>
-                 <li>HRS_SUN</li>
-                 <h3>Parking Rate</h3>
-                 <li>RTE_1HR</li>
-                 <li>RTE_2HR</li>
-                 <li>RTE_3HR</li>
-                 <li>RTE_ALLDAY</li>
-            </ul>
-		</div>
-        */
+        if (facility.fac_type) {
+            heading = "<h" + level + ">";
+            closeHeading = "</h" + level + ">";
+            content += heading + "Lot type: " + facility.fac_type + 
+                closeHeading;
+            level++;
+        }
+        heading = "<h" + level + ">";
+        closeHeading = "</h" + level + ">";
+        content += heading + "Occupancy" + closeHeading;
+        level++;
+        if (facility.vacant) {
+            content += "<p>Available Lots: " + facility.vacant + 
+                " out of " + facility.dea_stalls + 
+                " spaces available</p>";
+        } else {
+            content += "<p>Max Occupancy: " + facility.dea_stalls +
+                " spaces</p>";
+        }
+        content += heading + "Operating Hours" + closeHeading ;
+        content += "<ul>";
+        // TODO: parking hours into array
+        if (facility.hrs_monfri) {
+            content += "<li>Monday - Friday: " + facility.hrs_monfri + 
+                "</li>";
+        }
+        if (facility.hrs_sat) {
+            content += "<li>Saturday: " + facility.hrs_sat + 
+                "</li>";
+        }
+        if (facility.hrs_sun) {
+            content += "<li>Sunday: " + facility.hrs_sun + 
+                "</li>";
+        }
+        content += "</ul>";
+        content += heading + "Parking Rates" + closeHeading ;
+        content += "<ul>";
+        
+        // TODO: parking rates into array
+        if (facility.rte_1hr) {
+            if (facility.rte_1hr === "Permit only") {
+                content += "<li>One Hour: " + facility.rte_1hr + "</li>";
+            } else {
+                content += "<li>One Hour: $" + facility.rte_1hr + "</li>";
+            }
+        }
+        if (facility.rte_2hr) {
+            if (facility.rte_2hr === "Permit only") {
+                content += "<li>Two Hours: " + facility.rte_2hr + "</li>";
+            } else {
+                content += "<li>Two Hours: $" + facility.rte_2hr + "</li>";
+            }
+        }
+        if (facility.rte_3hr) {
+            if (facility.rte_3hr === "Permit only") {
+                content += "<li>Three Hours: " + facility.rte_3hr + "</li>";
+            } else {
+                content += "<li>Three Hours: $" + facility.rte_3hr + "</li>";
+            }
+        }
+        if (facility.rte_1allday) {
+            if (facility.rte_allday === "Permit only") {
+                content += "<li>All Day: " + facility.rte_allday + "</li>";
+            } else {
+                content += "<li>All Day: $" + facility.rte_allday + "</li>";
+            }
+        }
+        content += "</ul>";
+        content += "</div>";
         return content;
     }
 })();
