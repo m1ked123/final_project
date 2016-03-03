@@ -1,8 +1,13 @@
 "use strict";
 
 (function() {
+    var icons = {
+        PARKING_ICON: "assets/road_transportation_icons/parkinggarage.png"
+    }
     var outputMap = null;
-    var parkingGarageEndpoint = "https://data.seattle.gov/resource/3neb-8edu.json";
+    var parkingGarageEndpoint = "http://gisrevprxy.seattle.gov/" +
+        "ArcGIS/rest/services/SDOT_EXT/DSG_datasharing/MapServer/0/" +
+        "query?f=pjson&where=1%3D1&outfields=*&outSR=4326";
     var baseGeocodingUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=";
     var currInfoWindow = null;
     
@@ -33,7 +38,9 @@
         var latitude = jsonResponse.results[0].geometry.location.lat;
         var longitude = jsonResponse.results[0].geometry.location.lng;
         var position = {lat: latitude, lng: longitude};
-        addMarker(position);
+        addMarker(position, "", "");
+        outputMap.setCenter(position);
+        outputMap.setZoom(18);
     }
     
     function initMap() {
@@ -54,27 +61,27 @@
     }
     
     function addLocations() {
-        var response = JSON.parse(this.responseText);
+        var response = JSON.parse(this.responseText).features;
         for (var i = 0; i < response.length; i++) {
             var lotGarage = response[i];
-            var lotLat = lotGarage.shape.latitude;
-            var lotLng = lotGarage.shape.longitude;
+            var lotLat = lotGarage.geometry.y;
+            var lotLng = lotGarage.geometry.x;
             var pointPos = {
-                lat: parseFloat(lotLat),
-                lng: parseFloat(lotLng)
+                lat: lotLat,
+                lng: lotLng
             };
             var infowindow = new google.maps.InfoWindow({
                 content: buildFlyoutText(lotGarage)
             });
-            addMarker(pointPos, infowindow);
+            addMarker(pointPos, infowindow, icons.PARKING_ICON);
         }
     }
     
-    function addMarker(pointPosition, flyout) {
-        var image = "";
+    function addMarker(pointPosition, flyout, image) {
         var marker = new google.maps.Marker({
             position: pointPosition,
-            map: outputMap
+            map: outputMap,
+            icon: image
         });
         marker.addListener('click', function() {
             marker.flyout
@@ -91,58 +98,61 @@
     }
     
     function buildFlyoutText(facility) {
+        var attributes = facility.attributes;
         var content = "<div id=\"content\">";
         var level = 1;
         var heading = "<h" + level + ">";
         var closeHeading = "</h" + level + ">";
-        if (facility.fac_name) {
-            content += heading + facility.fac_name + closeHeading;
+        if (attributes.FAC_NAME) {
+            content += heading + attributes.FAC_NAME + closeHeading;
             level++;
         }
-        if (facility.dea_facility_address) {
+        if (attributes.DEA_FACILITY_ADDRESS) {
             heading = "<h" + level + ">";
             closeHeading = "</h" + level + ">";
-            content += heading + facility.dea_facility_address + closeHeading;
+            content += heading + attributes.DEA_FACILITY_ADDRESS + closeHeading;
             level++;
         }
-        if (facility.webname) {
+        if (attributes.WEBNAME) {
             heading = "<h" + level + ">";
             closeHeading = "</h" + level + ">";
-            content += heading + facility.webname + closeHeading;
+            content += heading + attributes.WEBNAME + closeHeading;
             level++;
         }
-        if (facility.fac_type) {
-            heading = "<h" + level + ">";
-            closeHeading = "</h" + level + ">";
-            content += heading + "Lot type: " + facility.fac_type + 
-                closeHeading;
-            level++;
+        if (attributes.FAC_TYPE) {
+            content += "<p><strong>Lot type</strong>: " + 
+                attributes.FAC_TYPE + "</p>";
+        }
+        if (attributes.OP_WEB) {
+            content += "<p><strong>Web Site</strong>: <a href=\"" +
+                attributes.OP_WEB + "\">" + attributes.OP_WEB + "</a></p>";
         }
         heading = "<h" + level + ">";
         closeHeading = "</h" + level + ">";
         content += heading + "Occupancy" + closeHeading;
         level++;
-        if (facility.vacant) {
-            content += "<p>Available Lots: " + facility.vacant + 
-                " out of " + facility.dea_stalls + 
+        if (attributes.VACANT && attributes.DEA_STALLS) {
+            content += "<p>Available Lots: " + attributes.VACANT + 
+                " out of " + attributes.DEA_STALLS + 
                 " spaces available</p>";
-        } else {
-            content += "<p>Max Occupancy: " + facility.dea_stalls +
+        } else if (attributes.DEA_STALLS) {
+            content += "<p>Max Occupancy: " + attributes.DEA_STALLS +
                 " spaces</p>";
         }
         content += heading + "Operating Hours" + closeHeading ;
         content += "<ul>";
+        
         // TODO: parking hours into array
-        if (facility.hrs_monfri) {
-            content += "<li>Monday - Friday: " + facility.hrs_monfri + 
+        if (attributes.HRS_MONFRI) {
+            content += "<li>Monday - Friday: " + attributes.HRS_MONFRI + 
                 "</li>";
         }
-        if (facility.hrs_sat) {
-            content += "<li>Saturday: " + facility.hrs_sat + 
+        if (attributes.HRS_SAT) {
+            content += "<li>Saturday: " + attributes.HRS_SAT + 
                 "</li>";
         }
-        if (facility.hrs_sun) {
-            content += "<li>Sunday: " + facility.hrs_sun + 
+        if (attributes.HRS_SUN) {
+            content += "<li>Sunday: " + attributes.HRS_SUN + 
                 "</li>";
         }
         content += "</ul>";
@@ -150,32 +160,32 @@
         content += "<ul>";
         
         // TODO: parking rates into array
-        if (facility.rte_1hr) {
-            if (facility.rte_1hr === "Permit only") {
-                content += "<li>One Hour: " + facility.rte_1hr + "</li>";
+        if (attributes.RTE_1HR) {
+            if (attributes.RTE_1HR === "Permit only") {
+                content += "<li>One Hour: " + attributes.RTE_1HR + "</li>";
             } else {
-                content += "<li>One Hour: $" + facility.rte_1hr + "</li>";
+                content += "<li>One Hour: $" + attributes.RTE_1HR + "</li>";
             }
         }
-        if (facility.rte_2hr) {
-            if (facility.rte_2hr === "Permit only") {
-                content += "<li>Two Hours: " + facility.rte_2hr + "</li>";
+        if (attributes.RTE_2HR) {
+            if (attributes.RTE_2HR === "Permit only") {
+                content += "<li>Two Hours: " + attributes.RTE_2HR + "</li>";
             } else {
-                content += "<li>Two Hours: $" + facility.rte_2hr + "</li>";
+                content += "<li>Two Hours: $" + attributes.RTE_2HR + "</li>";
             }
         }
-        if (facility.rte_3hr) {
-            if (facility.rte_3hr === "Permit only") {
-                content += "<li>Three Hours: " + facility.rte_3hr + "</li>";
+        if (attributes.RTE_3HR) {
+            if (attributes.RTE_3HR === "Permit only") {
+                content += "<li>Three Hours: " + attributes.RTE_3HR + "</li>";
             } else {
-                content += "<li>Three Hours: $" + facility.rte_3hr + "</li>";
+                content += "<li>Three Hours: $" + attributes.RTE_3HR + "</li>";
             }
         }
-        if (facility.rte_1allday) {
-            if (facility.rte_allday === "Permit only") {
-                content += "<li>All Day: " + facility.rte_allday + "</li>";
+        if (attributes.RTE_ALLDAY) {
+            if (attributes.RTE_ALLDAY === "Permit only") {
+                content += "<li>All Day: " + attributes.RTE_ALLDAY + "</li>";
             } else {
-                content += "<li>All Day: $" + facility.rte_allday + "</li>";
+                content += "<li>All Day: $" + attributes.RTE_ALLDAY + "</li>";
             }
         }
         content += "</ul>";
