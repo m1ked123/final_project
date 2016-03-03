@@ -62,19 +62,59 @@
                 lat: parseFloat(lotLat),
                 lng: parseFloat(lotLng)
             };
-            addMarker(pointPos);
+            var infowindow = new google.maps.InfoWindow({
+                content: buildFlyoutText(lotGarage)
+            });
+            addMarker(pointPos, infowindow);
         }
     }
     
-    function addMarker(pointPosition) {
+    function addMarker(pointPosition, flyout) {
         var image = "";
         var marker = new google.maps.Marker({
             position: pointPosition,
             map: outputMap
         });
+        
+        marker.addListener('click', function() {
+            flyout.open(outputMap, marker);
+        });
     }
     
     function ajaxFailure() {
         alert("oops!");
+    }
+    
+    function buildFlyoutText(facility) {
+        var content = "<div id=\"content\">";
+        if (facility.dea_facility_address) {
+            content += "<h1>" + facility.dea_facility_address + "</h1>";
+        }
+        if (facility.webname) {
+            content += "<h2>" + facility.webname + "</h2>"
+        }
+        /*
+            <ul>
+                <li>Available Lots: 5 out of 10</li>
+                <!--
+                    If there is a "vacant" property,
+                        put Available Lots: "vacant" out of "dea_stalls"
+                    Otherwise
+                        put Occupancy: "dea_stalls"
+                 -->
+                 <li>"fac_type"</li>
+                 <h3>Hours</h3>
+                 <li>HRS_MONFRI</li>
+                 <li>HRS_SAT</li>
+                 <li>HRS_SUN</li>
+                 <h3>Parking Rate</h3>
+                 <li>RTE_1HR</li>
+                 <li>RTE_2HR</li>
+                 <li>RTE_3HR</li>
+                 <li>RTE_ALLDAY</li>
+            </ul>
+		</div>
+        */
+        return content;
     }
 })();
