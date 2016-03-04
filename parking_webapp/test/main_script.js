@@ -1,6 +1,6 @@
 "use strict";
 
-(function() {
+(function () {
     var icons = {
         PARKING_ICON: "assets/road_transportation_icons/parkinggarage.png"
     }
@@ -10,56 +10,103 @@
         "query?f=pjson&where=1%3D1&outfields=*&outSR=4326";
     var baseGeocodingUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=";
     var currInfoWindow = null;
-    
-	window.onload = function() {
-		var script = document.createElement("script");
+
+    window.onload = function () {
+        var script = document.createElement("script");
         script.src = "https://maps.googleapis.com/maps/api/js";
         script.async = true;
         script.defer = true;
         script.onload = initMap;
         document.head.appendChild(script);
-        
+
         var geocodeAddr = document.getElementById("geocodeAddr");
         geocodeAddr.onclick = geocodeAddress;
-	};
-    
+
+        var findMeButton = document.getElementById("geolocation");
+        findMeButton.onclick = tryGeolocation;
+    };
+
+    function tryGeolocation() {
+        var radius = parseInt(document.getElementById("radius").value);
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+                outputMap.setCenter(pos);
+                addMarker(pos, "", "");
+                if (radius) {
+                    drawCircle(radius, pos);
+                }
+            }, function () {
+                handleLocationError(true, outputMap.getCenter(), radius);
+            });
+        } else {
+            handleLocationError(false, outputMap.getCenter(), radius);
+        };
+    }
+
+
+    function handleLocationError(browserHasGeolocation, pos, circleRadius) {
+        outputMap.setCenter(pos);
+        addMarker(pos, "", "");
+        if (circleRadius) {
+            drawCircle(circleRadius, pos);
+        }
+    }
+
+    function drawCircle(circRadius, pos) {
+        var circle = new google.maps.Circle({
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: "#FF0000",
+            fillOpacity: 0.35,
+            map: outputMap,
+            center: pos,
+            radius: circRadius
+        });
+    }
+
     function geocodeAddress() {
         var address = document.getElementById("addr").value;
         baseGeocodingUrl += address;
         var ajaxRequest = new XMLHttpRequest();
-		ajaxRequest.onload = processLocation;
-		ajaxRequest.onerror = ajaxFailure;
-		ajaxRequest.open("GET", baseGeocodingUrl, true);
-		ajaxRequest.send();
+        ajaxRequest.onload = processLocation;
+        ajaxRequest.onerror = ajaxFailure;
+        ajaxRequest.open("GET", baseGeocodingUrl, true);
+        ajaxRequest.send();
     }
-    
+
     function processLocation() {
         var jsonResponse = JSON.parse(this.responseText);
         var latitude = jsonResponse.results[0].geometry.location.lat;
         var longitude = jsonResponse.results[0].geometry.location.lng;
-        var position = {lat: latitude, lng: longitude};
+        var position = { lat: latitude, lng: longitude };
         addMarker(position, "", "");
         outputMap.setCenter(position);
         outputMap.setZoom(18);
     }
-    
+
     function initMap() {
         var seattleLatLong = { lat: 47.59978, lng: -122.3346 };
         outputMap = new google.maps.Map(document.getElementById("map"), {
             zoom: 16,
             center: seattleLatLong
-        }); 
-        makeCall(); 
+        });
+        makeCall();
     }
-    
+
     function makeCall() {
         var ajaxRequest = new XMLHttpRequest();
-		ajaxRequest.onload = addLocations;
-		ajaxRequest.onerror = ajaxFailure;
-		ajaxRequest.open("GET", parkingGarageEndpoint, true);
-		ajaxRequest.send();
+        ajaxRequest.onload = addLocations;
+        ajaxRequest.onerror = ajaxFailure;
+        ajaxRequest.open("GET", parkingGarageEndpoint, true);
+        ajaxRequest.send();
     }
-    
+
     function addLocations() {
         var response = JSON.parse(this.responseText).features;
         for (var i = 0; i < response.length; i++) {
@@ -76,14 +123,14 @@
             addMarker(pointPos, infowindow, icons.PARKING_ICON);
         }
     }
-    
+
     function addMarker(pointPosition, flyout, image) {
         var marker = new google.maps.Marker({
             position: pointPosition,
             map: outputMap,
             icon: image
         });
-        marker.addListener('click', function() {
+        marker.addListener('click', function () {
             marker.flyout
             flyout.open(outputMap, marker);
             if (currInfoWindow) {
@@ -92,11 +139,11 @@
             currInfoWindow = flyout;
         });
     }
-    
+
     function ajaxFailure() {
         alert("oops!");
     }
-    
+
     function buildFlyoutText(facility) {
         var attributes = facility.attributes;
         var content = "<div id=\"content\">";
@@ -120,43 +167,43 @@
             level++;
         }
         if (attributes.FAC_TYPE) {
-            content += "<p><strong>Lot type</strong>: " + 
-                attributes.FAC_TYPE + "</p>";
+            content += "<p><strong>Lot type</strong>: " +
+            attributes.FAC_TYPE + "</p>";
         }
         if (attributes.OP_WEB) {
             content += "<p><strong>Web Site</strong>: <a href=\"" +
-                attributes.OP_WEB + "\">" + attributes.OP_WEB + "</a></p>";
+            attributes.OP_WEB + "\">" + attributes.OP_WEB + "</a></p>";
         }
         heading = "<h" + level + ">";
         closeHeading = "</h" + level + ">";
         content += heading + "Occupancy" + closeHeading;
         level++;
         if (attributes.VACANT && attributes.DEA_STALLS) {
-            content += "<p>Available Lots: " + attributes.VACANT + 
-                " out of " + attributes.DEA_STALLS + 
-                " spaces available</p>";
+            content += "<p>Available Lots: " + attributes.VACANT +
+            " out of " + attributes.DEA_STALLS +
+            " spaces available</p>";
         } else if (attributes.DEA_STALLS) {
             content += "<p>Max Occupancy: " + attributes.DEA_STALLS +
-                " spaces</p>";
+            " spaces</p>";
         }
-        content += heading + "Operating Hours" + closeHeading ;
+        content += heading + "Operating Hours" + closeHeading;
         content += "<ul>";
         
         // TODO: parking hours into array
         if (attributes.HRS_MONFRI) {
-            content += "<li>Monday - Friday: " + attributes.HRS_MONFRI + 
-                "</li>";
+            content += "<li>Monday - Friday: " + attributes.HRS_MONFRI +
+            "</li>";
         }
         if (attributes.HRS_SAT) {
-            content += "<li>Saturday: " + attributes.HRS_SAT + 
-                "</li>";
+            content += "<li>Saturday: " + attributes.HRS_SAT +
+            "</li>";
         }
         if (attributes.HRS_SUN) {
-            content += "<li>Sunday: " + attributes.HRS_SUN + 
-                "</li>";
+            content += "<li>Sunday: " + attributes.HRS_SUN +
+            "</li>";
         }
         content += "</ul>";
-        content += heading + "Parking Rates" + closeHeading ;
+        content += heading + "Parking Rates" + closeHeading;
         content += "<ul>";
         
         // TODO: parking rates into array

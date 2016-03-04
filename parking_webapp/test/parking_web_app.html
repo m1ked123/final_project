@@ -47,9 +47,10 @@
                         <legend>Parking Near Destination</legend>
                         <input type="text" maxlength="200" 
                             placeholder="address" id="addr"/>
-                        <input type="number" min="0" max="10" 
-                            step=".1" placeholder="radius"  />
+                        <input type="number" min="0" max="2000" 
+                            step=".5" placeholder="radius" id="radius" />
                         <button type="submit" id="geocodeAddr">Apply</button>
+                        <button type="submit" id="geolocation">Find Me</button>
                     </fieldset>
                     <fieldset>
                         <legend>Time Constraints</legend>
