@@ -1,4 +1,75 @@
+#sidebar {
+    float: left;
+    width: 25%;
+    height: 100%;
+}
+
 #map {
-    width: 1000px;
-    height: 800px;
+    width: 75%;
+    height: 75%;
+    float: right;
+    left: 20px;
+}
+
+#content_area {
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
+    width: 75%;
+    height: 100%;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 22px;
+    -webkit-transition: height .5s;
+    -moz-transition: height .5s;
+    transition: height .5s;
+    background-color: rgba(70,70,70,1);
+}
+
+.open:after {
+    content: "\2227";
+    font-size: 12px;
+}
+
+#aboutButton {
+    color: #777;
+    outline: none;
+    border: none;
+    height: 100%;
+    width: 44px;
+    position: relative;
+    top: 0;
+    float: right;
+}
+
+.close:after {
+    content: "\2228";
+    font-size: 12px;
+}
+
+#aboutText {
+    visibility: hidden;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    -o-transition: visibility .5s;
+    -ms-transition: visibility .5s;
+    -webkit-transition: visibility .5s;
+    -moz-transition: visibility .5s;
+    transition: visibility .5s;
+}
+
+#introduction {
+    text-align: center;
 }
