@@ -57,8 +57,14 @@
         script.onload = initMap;
         document.head.appendChild(script);
         
-        var infoButton = document.getElementById("aboutButton");
+        var infoButton = document.getElementById("expandButton");
         infoButton.onclick = showInfo;
+        
+        var menuButton = document.getElementById("menuButton");
+        menuButton.onclick = showMenu;
+        
+        var closeButton = document.getElementById("closeButton");
+        closeButton.onclick = closeMenu;
 
         var geocodeAddr = document.getElementById("geocodeAddr");
         geocodeAddr.onclick = geocodeAddress;
@@ -78,20 +84,31 @@
     
     function showInfo() {
         if (this.classList.contains("open")) {
-            document.getElementById("infoFooter").style.height = "250px";
+            document.getElementById("infoFooter").style.height = "100%";
             document.getElementById("aboutText").style.visibility = "visible";
+            document.getElementById("infoFooter").style.backgroundColor = "rgba(0,0,0,.9)";
             this.classList.remove("open");
             this.classList.add("close");
         } else {
             document.getElementById("infoFooter").style.height = "";
             document.getElementById("aboutText").style.visibility = "";
+            document.getElementById("infoFooter").style.backgroundColor = "";
             this.classList.remove("close");
             this.classList.add("open");
         }   
     }
+    
+    function showMenu() {
+        document.getElementById("sidebar").style.width = "100%";
+    }
+    
+    function closeMenu() {
+        document.getElementById("sidebar").style.width = "";
+    }
+
 
     function tryGeolocation() {
-        var radius = parseInt(document.getElementById("radius").value);
+        var radius = parseFloat(document.getElementById("radius").value);
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function (position) {
                 var pos = {

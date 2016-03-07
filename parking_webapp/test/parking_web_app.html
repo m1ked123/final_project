@@ -9,58 +9,89 @@
 	</head>
 	
 	<body>
+        <div id="introduction">
+            <h1>Seattle Parking Availability Application</h1>
+            <h2>
+                An app that helps you find parking in Seattle!
+            </h2>
+        </div>
         <div id="content_area">
-            <div id="introduction">
-                <h1>Seattle Parking Availability Application</h1>
-                <h2>
-                    An app that helps you find parking in Seattle!
-                </h2>
-            </div>
             <div id="sidebar">
+                <button id="closeButton"></button>
                 <div id="filters">
                     <h2>Filters</h2>
                     <fieldset>
                         <legend>Parking Types</legend>
-                        <input type="checkbox" checked="checked" id="parkingGarages" />
-                        <label>Parking Garages/Parking Lots</label>
-                        <input type="checkbox" id="streetParking" />
-                        <label>Street Parking</label>
-                        <input type="checkbox" id="payStations" />
-                        <label>Parking Pay Stations</label>
+                        <div class="control">
+                            <input type="checkbox" checked="checked" id="parkingGarages" />
+                            <label>Parking Garages/Parking Lots</label>
+                        </div>
+                        <div class="control">
+                            <input type="checkbox" id="streetParking" />
+                            <label>Street Parking</label>
+                        </div>
+                        <div class="control">
+                            <input type="checkbox" id="payStations" />
+                            <label>Parking Pay Stations</label>
+                        </div>
                     </fieldset>
                     <fieldset>
                         <legend>Parking Near Destination</legend>
-                        <input type="text" maxlength="200" 
-                            placeholder="address" id="addr"/>
-                        <input type="number" min="0" max="2000" 
-                            step=".5" placeholder="radius" id="radius" />
-                        <button type="submit" id="geocodeAddr">Apply</button>
-                        <button type="submit" id="geolocation">Find Me</button>
+                        <div class="control">
+                            <label>Parking Near Location</label>
+                            <input type="text" maxlength="200" 
+                                placeholder="address" id="addr"/>
+                        </div>
+                        <div class="control">
+                            <label>or...</label>   
+                            <button type="submit" id="geolocation">Find Me</button>
+                        </div>
+                        <div class="control">
+                            <label>Within</label>
+                            <input type="number" min="0" max="2000" 
+                                step=".5" placeholder="radius" id="radius" />
+                            <select>
+                                <option>Meters</option>
+                                <option>Kilometers</option>
+                                <option>Miles</option>
+                                <option>Feet</option>
+                            </select>
+                        </div>
+                        <div class="control">
+                            <button type="submit" id="geocodeAddr">Submit</button>
+                        </div>
                     </fieldset>
                     <fieldset>
                         <legend>Time Constraints</legend>
-                        <label>Time</label>
-                        <input type="time" placeholder="HH:mm"/>
-                        <label>Date</label>
-                        <input type="date"  placeholder="MM/dd/yyyy"/>
-                        <button type="submit">Apply</button>
+                        <div class="control">
+                            <label>Time</label>
+                            <input type="time" placeholder="HH:mm"/>
+                        </div>
+                        <div class="control">
+                            <label>Date</label>
+                            <input type="date"  placeholder="MM/dd/yyyy"/>
+                        </div>
+                        <div class="control">
+                            <button type="submit">Submit</button>
+                        </div>
                     </fieldset>
                 </div>
-                <div id="legend">
-                    <h2>Legend</h2>
-                    <p>
-                        This is the location for the legend
-                    </p>
-                </div>
             </div>
+            <button id="menuButton"></button>
             <div id="map"> 
                 <!--
                     Google map will go here
                 -->
             </div>
+            <div id="legend">
+                <h2>Legend</h2>
+                <p>
+                    This is the location for the legend
+                </p>
+            </div>
         </div>
         <footer id="infoFooter">
-            <button id="aboutButton" class="open"></button>
+            <button id="expandButton" class="open"></button>
             <div id="aboutText">
                 <p>
                     This web page is a location for finding accessible
