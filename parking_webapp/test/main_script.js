@@ -21,6 +21,18 @@
         NO_PARKING: "#ff0000"
     }
 
+    var units = {
+        MILES: "miles",
+        FEET: "feet",
+        KILOMETERS: "kilometers"
+    }
+
+    var conv_fact = {
+        mi_to_m: 0.000621371,
+        ft_to_m: 3.2808,
+        km_to_m: .001
+    }
+
     var outputMap = null;
 
     var parkingGarageEndpoint = "http://gisrevprxy.seattle.gov/" +
@@ -81,6 +93,24 @@
         var payStationCheckbox = document.getElementById("payStations");
         payStationCheckbox.onchange = togglePayStations;
     };
+
+    function converter(in_num){
+        var combo_num = document.getElementById("in_unit");
+        var in_unit = combo_num.value;
+        var meter_out = in_num;
+        alert(in_unit);
+        if(in_unit === units.MILES){
+            meter_out = in_num / conv_fact.mi_to_m;
+        }
+        if(in_unit === units.FEET){
+            meter_out = in_num / conv_fact.ft_to_m;
+        }
+        if(in_unit === units.KILOMETERS){
+            meter_out = in_num / conv_fact.km_to_m;
+        }
+        alert(meter_out);
+        return meter_out;
+    }
     
     function showInfo() {
         if (this.classList.contains("open")) {
@@ -140,6 +170,7 @@
     }
 
     function drawCircle(circRadius, pos) {
+        var new_radius = converter(circRadius);
         userLocationCircle = new google.maps.Circle({
             strokeColor: "#FF0000",
             strokeOpacity: 0.8,
@@ -148,7 +179,7 @@
             fillOpacity: 0.35,
             map: outputMap,
             center: pos,
-            radius: circRadius
+            radius: new_radius
         });
     }
 
