@@ -169,13 +169,16 @@ fieldset {
     
     #legend {
         width: 100%;
+
     }
 }
 
 /* Computer */
 @media screen and (min-width: 1240px) {
     #sidebar {
-        float: left;
+        position: absolute;
+        left: 0;
+        top: 0;
         height: 100%;
         max-width: 20%;
     }
@@ -197,13 +200,13 @@ fieldset {
     }
     
     #map {
-        float: left;
+        float: right;
         height: 100%;
         width: 60%;
     }
     
     #legend {
-        float: left;
+        float: right;
         height: 100%;
         width: 20%;
     }
