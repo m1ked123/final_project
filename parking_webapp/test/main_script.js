@@ -104,6 +104,7 @@
         }
         if(in_unit === units.FEET){
             meter_out = in_num / conv_fact.ft_to_m;
+            meter_out = in_num / conv_fact.ft_to_m;
         }
         if(in_unit === units.KILOMETERS){
             meter_out = in_num / conv_fact.km_to_m;

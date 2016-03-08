@@ -180,7 +180,7 @@ fieldset {
         left: 0;
         top: 0;
         height: 100%;
-        max-width: 20%;
+        width: 20%;
     }
     
     #filters h1 {
@@ -200,13 +200,16 @@ fieldset {
     }
     
     #map {
-        float: right;
+        position: fixed;
+        left: 250px;
         height: 100%;
         width: 60%;
     }
     
     #legend {
-        float: right;
+        position: absolute;
+        right: 0;
+        top: 0;
         height: 100%;
         width: 20%;
     }
