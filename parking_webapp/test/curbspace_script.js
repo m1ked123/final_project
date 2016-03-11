@@ -15,29 +15,53 @@
         NO_PARKING: "#ff0000"
     }
 
-    var curbSpaceEndpoint = "http://gisrevprxy.seattle.gov/" +
+    var CURBSPACE_ENDPOINT = "http://gisrevprxy.seattle.gov/" +
         "ArcGIS/rest/services/SDOT_EXT/DSG_datasharing/MapServer/27/" +
-        "query?f=pjson&outfields=*&outSR=4326&returnTrueCurves=true&where=1%3D1";
+        "query?";
 
     var resultOffset = "&resultOffset=";
     var maxResults = "&resultRecordCount=";
+    var FORMAT = "&f=pjson";
+    var WHERE = "&where=1%3D1";
+    var OUTPUT_FIELDS = "&outfields=*";
+    var OUTPUT_SPATIAL_REFERENCE = "&outSR=4326";
+    var GET_COUNT = "&returnCountOnly=true";
+    var GET_GEOMETRY = "&returnGeometry=true";
 
-    var curbSpacePolylines = [];
+    var curbSpaceLines = [];
+    var assetCount = 0;
 
     onmessage = function(e) {
+        getCurbspaceCount();
         getCurbspaces();
         postMessage(curbSpacePolylines);
-        curbSpacePolylines = null;
+        curbSpaceLines = null;
+    }
+    
+    function getCurbspaceCount() {
+        var requestEndpoint = CURBSPACE_ENDPOINT + WHERE + FORMAT + GET_COUNT;
+        var ajaxRequest = new XMLHttpRequest();
+        ajaxRequest.onload = storeCount;
+        ajaxRequest.onerror = ajaxFailure;
+        ajaxRequest.open("GET", requestEndpoint, false);
+        ajaxRequest.send();
+    }
+
+    function storeCount() {
+        var count = JSON.parse(this.responseText).count;
+        if (count) {
+            assetCount = count;
+        }
     }
 
     function getCurbspaces() {
         var max = 1000;
         var offset = 0;
-        var recordCount = 50279;
+        var recordCount = assetCount;
         while (recordCount > 0) {
             var offsetParam = resultOffset + offset;
             var maxRecordsParam = maxResults + max;
-            var requestEndpoint = curbSpaceEndpoint + offsetParam + maxRecordsParam;
+            var requestEndpoint = CURBSPACE_ENDPOINT + offsetParam + maxRecordsParam + WHERE + FORMAT + GET_GEOMETRY + OUTPUT_SPATIAL_REFERENCE + OUTPUT_FIELDS;
             var ajaxRequest = new XMLHttpRequest();
             ajaxRequest.onload = createCurbSpacePolylines;
             ajaxRequest.onerror = ajaxFailure;
@@ -106,7 +130,7 @@
             "strokeWeight": 2,
             "strokeColor": color
         };
-        curbSpacePolylines.push(spacePath);
+        curbSpaceLines.push(spacePath);
     }
 
     function ajaxFailure() {

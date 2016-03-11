@@ -26,18 +26,8 @@
     var baseGeocodingUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
     var currInfoWindow = null;
-
-    var curbSpacePolylines = [];
-    var rpzPolylines = [];
-
     var locationMarker = null;
-
     var userLocationCircle = null;
-
-
-    var tempPolylines = [];
-    var tempRpzs = [];
-    var timers = [];
 
     var tempGarages = [];
     var nondisplayedGarages = [];
@@ -47,7 +37,13 @@
     var nondisplayedPayStations = [];
     var displayedPayStations = [];
 
-    var index = 0;
+    var tempRpzs = [];
+    var nondisplayedRpzs = [];
+    var displayedRpzs = [];
+
+    var tempCurbspaces = [];
+    var nondisplayedCurbspaces = [];
+    var displayedCurbspaces = [];
 
     window.onload = function() {
         var script = document.createElement("script");
@@ -65,6 +61,14 @@
         payStationCheckbox.disabled = true;
         payStationCheckbox.onclick = togglePayStations;
 
+        var rpzCheckbox = document.getElementById("rpzs");
+        rpzCheckbox.disabled = true;
+        rpzCheckbox.onclick = toggleRpzs;
+
+        var curbspaceCheckbox = document.getElementById("streetParking");
+        curbspaceCheckbox.disabled = true;
+        curbspaceCheckbox.onclick = toggleCurbspaces;
+
         var infoButton = document.getElementById("expandButton");
         infoButton.onclick = showInfo;
 
@@ -79,14 +83,6 @@
 
         var findMeButton = document.getElementById("geolocation");
         findMeButton.onclick = tryGeolocation;
-
-        var streetParkingCheckbox = document.getElementById("streetParking");
-        streetParkingCheckbox.checked = false;
-        streetParkingCheckbox.disabled = true;
-
-        var rpzCheckbox = document.getElementById("rpzs");
-        rpzCheckbox.checked = false;
-        rpzCheckbox.disabled = true;
 
         addTimeIntervals();
     };
@@ -126,14 +122,10 @@
         currInfoWindow = null;
         locationMarker = null;
         userLocationCircle = null;
-        curbSpacePolylines = null;
         icons = null;
         units = null;
         conv_fact = null;
-        tempPolylines = null;
-        tempRpzs = null;
-        rpzPolylines = null;
-        
+
         tempGarages = null;
         nondisplayedGarages = null;
         displayedGarages = null;
@@ -142,6 +134,26 @@
         nondisplayedPayStations = null;
         displayedPayStations = null;
 
+        tempRpzs = null;
+        nondisplayedRpzs = null;
+        displayedRpzs = null;
+
+        tempCurbspaces = null;
+        nondisplayedCurbspaces = null;
+        displayedCurbspaces = null;
+
+    }
+
+    function initMap() {
+        var seattleLatLong = { lat: 47.59978, lng: -122.3346 };
+        outputMap = new google.maps.Map(document.getElementById("map"), {
+            zoom: 16,
+            center: seattleLatLong
+        });
+        loadParkingGarages();
+        loadPayStations();
+        loadRpzs();
+        loadCurbspaces();
     }
 
     function converter(in_num) {
@@ -277,19 +289,6 @@
         outputMap.setCenter(position);
         outputMap.setZoom(18);
         drawCircle(radius, position);
-    }
-
-    function initMap() {
-        var seattleLatLong = { lat: 47.59978, lng: -122.3346 };
-        outputMap = new google.maps.Map(document.getElementById("map"), {
-            zoom: 16,
-            center: seattleLatLong
-        });
-        loadParkingGarages();
-        loadPayStations();
-        // loadCurbspaces();
-
-       	// loadRpzs();
     }
 
     function addAssetsToMap(assetList) {
@@ -621,137 +620,6 @@
         }
     }
 
-	/***************************************************************
-	 * CURBSPACES
-	 * 
-	 * This region of code contains all functions that are
-	 * responsible for loading and managing data for categories of
-	 * different curbspaces in the City of Seattle.
-	 ***************************************************************/
-    function loadCurbspaces() {
-        if (window.Worker) {
-            var curbspaceWorker = new Worker("curbspace_script.js");
-            showSpinner("curbProgressSpinner");
-            curbspaceWorker.postMessage("go");
-            curbspaceWorker.onmessage = function(e) {
-                tempPolylines = e.data;
-                var timer = window.setInterval(function() {
-                    constructPolylines(timer);
-
-                }, 300);
-                timers.push(timer);
-                console.log("curbspaces-->" + timers);
-                curbspaceWorker.terminate();
-            }
-        }
-    }
-
-    function constructPolylines(curbSpaceTimer) {
-        if (index == tempPolylines.length) {
-            window.clearInterval(curbSpaceTimer);
-            index = 0;
-            tempPolylines = [];
-            var streetParkingCheckbox = document.getElementById("streetParking");
-            streetParkingCheckbox.disabled = false;
-            streetParkingCheckbox.onchange = toggleStreetParking;
-            if (streetParkingCheckbox.checked) {
-                var timer = window.setInterval(function() {
-                    addPolylinesToMap(timer);
-                }, 300);
-            } else {
-                hideSpinner("curbProgressSpinner");
-                index = 0;
-            }
-        } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < tempPolylines.length) {
-                    var spacePath = new google.maps.Polyline({
-                        path: tempPolylines[i].path,
-                        geodesic: tempPolylines[i].geodesic,
-                        strokeOpacity: tempPolylines[i].strokeOpacity,
-                        strokeWeight: tempPolylines[i].strokeWeight,
-                        strokeColor: tempPolylines[i].strokeColor
-                    });
-                    curbSpacePolylines.push(spacePath);
-                } else {
-                    index = 0;
-                    window.clearInterval(curbSpaceTimer);
-                    tempPolylines = [];
-                    var streetParkingCheckbox = document.getElementById("streetParking");
-                    streetParkingCheckbox.disabled = false;
-                    streetParkingCheckbox.onchange = toggleStreetParking;
-                    if (streetParkingCheckbox.checked) {
-                        var timer = window.setInterval(function() {
-                            addPolylinesToMap(timer)
-                        }, 300);
-                    } else {
-                        hideSpinner("curbProgressSpinner");
-                        index = 0;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    function addPolylinesToMap(curbSpaceTimer) {
-        if (index == curbSpacePolylines.length) {
-            hideSpinner("curbProgressSpinner");
-            console.log("done");
-            window.clearInterval(curbSpaceTimer);
-            index = 0;
-        } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < curbSpacePolylines.length) {
-                    curbSpacePolylines[i].setMap(outputMap);
-                } else {
-                    hideSpinner("curbProgressSpinner");
-                    index = 0;
-                    window.clearInterval(curbSpaceTimer);
-                    break;
-                }
-            }
-        }
-    }
-
-    function removePolylinesFromMap(curbSpaceTimer) {
-        if (index == curbSpacePolylines.length) {
-            hideSpinner("curbProgressSpinner");
-            window.clearInterval(curbSpaceTimer);
-            index = 0;
-        } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < curbSpacePolylines.length) {
-                    curbSpacePolylines[i].setMap(null);
-                } else {
-                    hideSpinner("curbProgressSpinner");
-                    index = 0;
-                    window.clearInterval(curbSpaceTimer);
-                    break;
-                }
-            }
-        }
-    }
-
-    function toggleStreetParking() {
-        if (this.checked) {
-            showSpinner("curbProgressSpinner");
-            var timer = window.setInterval(function() {
-                addPolylinesToMap(timer);
-            }, 300);
-        } else {
-            showSpinner("curbProgressSpinner");
-            var timer = window.setInterval(function() {
-                removePolylinesFromMap(timer);
-            }, 300);
-        }
-    }
 
 	/***************************************************************
 	* RESTRICTED PARKING ZONES (RPZs)
@@ -767,120 +635,165 @@
             rpzWorker.postMessage("go");
             rpzWorker.onmessage = function(e) {
                 tempRpzs = e.data;
-                var timer = window.setInterval(function() {
-                    constructRpzs(timer);
-
-                }, 300);
-                timers.push(timer);
-                console.log("rpzs-->" + timers);
+                var rpzTimer = window.setInterval(function() {
+                    constructRpzs(rpzTimer);
+                }, 5);
                 rpzWorker.terminate();
             }
         }
     }
 
     function constructRpzs(rpzTimer) {
-        if (index == tempRpzs.length) {
-            index = 0;
-            window.clearInterval(rpzTimer);
-            tempRpzs = [];
-            var rpzCheckbox = document.getElementById("rpzs");
-            rpzCheckbox.disabled = false;
-            rpzCheckbox.onchange = toggleRpzs;
-            if (rpzCheckbox.checked) {
-                var timer = window.setInterval(function() {
-                    addRpzsToMap(timer);
-                }, 300);
-            } else {
-                hideSpinner("rpzProgressSpinner");
-                index = 0;
-            }
+        if (tempRpzs.length > 0) {
+            var rpzPath = tempRpzs.pop();
+            var rpzPolyline = new google.maps.Polyline({
+                path: rpzPath.path,
+                geodesic: rpzPath.geodesic,
+                strokeOpacity: rpzPath.strokeOpacity,
+                strokeWeight: rpzPath.strokeWeight,
+                strokeColor: rpzPath.strokeColor
+            });
+            nondisplayedRpzs.push(rpzPolyline);
         } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < tempRpzs.length) {
-                    var rpzPolyline = new google.maps.Polyline({
-                        path: tempRpzs[i].path,
-                        geodesic: tempRpzs[i].geodesic,
-                        strokeOpacity: tempRpzs[i].strokeOpacity,
-                        strokeWeight: tempRpzs[i].strokeWeight,
-                        strokeColor: tempRpzs[i].strokeColor
-                    });
-                    rpzPolylines.push(rpzPolyline);
-                } else {
-                    index = 0;
-                    window.clearInterval(rpzTimer);
-                    tempRpzs = [];
-                    var rpzCheckbox = document.getElementById("rpzs");
-                    rpzCheckbox.disabled = false;
-                    rpzCheckbox.onchange = toggleRpzs;
-                    if (rpzCheckbox.checked) {
-                        var timer = window.setInterval(function() {
-                            addRpzsToMap(timer);
-                        }, 300);
-                    } else {
-                        hideSpinner("rpzProgressSpinner");
-                        index = 0;
-                    }
-                    break;
-                }
+            var rpzCheckbox = document.getElementById("rpzs");
+            if (rpzCheckbox.checked) {
+                rpzTimer = window.setInterval(function() {
+                    addRpzsToMap(rpzTimer);
+                }, 5);
+            } else {
+                rpzCheckbox.disabled = false;
+                hideSpinner("rpzProgressSpinner");
             }
         }
     }
 
     function toggleRpzs() {
         if (this.checked) {
+            this.disabled = true;
             showSpinner("rpzProgressSpinner");
-            var timer = window.setInterval(function() {
-                addRpzsToMap(timer);
-            }, 300);
+            var rpzTimer = window.setInterval(function() {
+                addRpzsToMap(rpzTimer);
+            }, 5);
         } else {
+            this.disabled = true;
             showSpinner("rpzProgressSpinner");
-            var timer = window.setInterval(function() {
-                removeRpzsFromMap(timer);
-            }, 300);
+            var rpzTimer = window.setInterval(function() {
+                removeRpzsFromMap(rpzTimer);
+            }, 5);
         }
     }
 
     function addRpzsToMap(rpzTimer) {
-        if (index == rpzPolylines.length) {
-            hideSpinner("rpzProgressSpinner");
-            index = 0;
-            window.clearInterval(rpzTimer);
+        if (nondisplayedRpzs.length > 0) {
+            var rpz = nondisplayedRpzs.pop();
+            rpz.setMap(outputMap);
+            displayedRpzs.push(rpz);
         } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < rpzPolylines.length) {
-                    rpzPolylines[i].setMap(outputMap);
-                } else {
-                    hideSpinner("rpzProgressSpinner");
-                    index = 0;
-                    window.clearInterval(rpzTimer);
-                    break;
-                }
-            }
+            var rpzCheckbox = document.getElementById("rpzs");
+            rpzCheckbox.disabled = false;
+            hideSpinner("rpzProgressSpinner");
+            window.clearInterval(rpzTimer);
         }
     }
 
     function removeRpzsFromMap(rpzTimer) {
-        if (index == rpzPolylines.length) {
-            hideSpinner("rpzProgressSpinner");
-            index = 0;
-            window.clearInterval(rpzTimer);
+        if (displayedRpzs.length > 0) {
+            var rpz = displayedRpzs.pop();
+            rpz.setMap(null);
+            nondisplayedRpzs.push(rpz);
         } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < rpzPolylines.length) {
-                    rpzPolylines[i].setMap(null);
-                } else {
-                    hideSpinner("rpzProgressSpinner");
-                    index = 0;
-                    window.clearInterval(rpzTimer);
-                    break;
-                }
+            var rpzCheckbox = document.getElementById("rpzs");
+            rpzCheckbox.disabled = false;
+            hideSpinner("rpzProgressSpinner");
+            window.clearInterval(rpzTimer);
+        }
+    }
+
+	/***************************************************************
+	 * CURBSPACES
+	 * 
+	 * This region of code contains all functions that are
+	 * responsible for loading and managing data for categories of
+	 * different curbspaces in the City of Seattle.
+	 ***************************************************************/
+    function loadCurbspaces() {
+        if (window.Worker) {
+            var curbspaceWorker = new Worker("curbspace_script.js");
+            showSpinner("curbProgressSpinner");
+            curbspaceWorker.postMessage("go");
+            curbspaceWorker.onmessage = function(e) {
+                tempCurbspaces = e.data;
+                var curbspaceTimer = window.setInterval(function() {
+                    constructCubspaces(curbspaceTimer);
+                }, 5);
+                curbspaceWorker.terminate();
             }
+        }
+    }
+
+    function constructCubspaces(curbspaceTimer) {
+        if (tempCurbspaces.length > 0) {
+            var curbspace = tempCurbspaces.pop();
+            var spacePath = new google.maps.Polyline({
+                path: curbspace.path,
+                geodesic: curbspace.geodesic,
+                strokeOpacity: curbspace.strokeOpacity,
+                strokeWeight: curbspace.strokeWeight,
+                strokeColor: curbspace.strokeColor
+            });
+            nondisplayedCurbspaces.push(spacePath);
+        } else {
+            var curbspaceCheckbox = document.getElementById("streetParking");
+            if (curbspaceCheckbox.checked) {
+                curbspaceTimer = window.setInterval(function() {
+                    addCurbspacesToMap(curbspaceTimer);
+                }, 5);
+            } else {
+                curbspaceCheckbox.disabled = false;
+                hideSpinner("curbProgressSpinner");
+            }
+        }
+    }
+
+    function addCurbspacesToMap(curbspaceTimer) {
+        if (nondisplayedCurbspaces.length > 0) {
+            var curbspace = nondisplayedCurbspaces.pop();
+            curbspace.setMap(outputMap);
+            displayedCurbspaces.push(curbspace);
+        } else {
+            hideSpinner("curbProgressSpinner");
+            var curbspaceCheckbox = document.getElementById("streetParking");
+            curbspaceCheckbox.disabled = false;
+            window.clearInterval(curbspaceTimer);
+        }
+    }
+
+    function removePolylinesFromMap(curbspaceTimer) {
+        if (displayedCurbspaces.length > 0) {
+            var curbspace = displayedCurbspaces.pop();
+            curbspace.setMap(null);
+            nondisplayedCurbspaces.push(curbspace);
+        } else {
+            hideSpinner("curbProgressSpinner");
+            var curbspaceCheckbox = document.getElementById("streetParking");
+            curbspaceCheckbox.disabled = false;
+            window.clearInterval(curbspaceTimer);
+        }
+    }
+
+    function toggleCurbspaces() {
+        if (this.checked) {
+            this.disabled = true;
+            showSpinner("curbProgressSpinner");
+            var curbspaceTimer = window.setInterval(function() {
+                addCurbspacesToMap(curbspaceTimer);
+            }, 5);
+        } else {
+            this.disabled = true;
+            showSpinner("curbProgressSpinner");
+            var curbspaceTimer = window.setInterval(function() {
+                removePolylinesFromMap(curbspaceTimer);
+            }, 5);
         }
     }
 })();

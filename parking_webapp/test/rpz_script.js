@@ -1,29 +1,52 @@
 (function() {
     "use strict";
 
-    var rpzEndpoint = "http://gisrevprxy.seattle.gov/ArcGIS/rest/" +
-        "services/SDOT_EXT/PARKING/MapServer/4/query?f=" +
-        "pjson&where=1%3D1&outfields=*&outSR=4326";
+    var RPZ_ENDPOINT = "http://gisrevprxy.seattle.gov/ArcGIS/rest/" +
+        "services/SDOT_EXT/PARKING/MapServer/4/query?";
 
     var resultOffset = "&resultOffset=";
     var maxResults = "&resultRecordCount=";
+    var FORMAT = "&f=pjson";
+    var WHERE = "&where=1%3D1";
+    var OUTPUT_FIELDS = "&outfields=*";
+    var OUTPUT_SPATIAL_REFERENCE = "&outSR=4326";
+    var GET_COUNT = "&returnCountOnly=true";
+    var GET_GEOMETRY = "&returnGeometry=true";
 
     var rpzLines = [];
+    var assetCount = 0;
 
     onmessage = function(e) {
+        getRpzCount();
         getRpzs();
         postMessage(rpzLines);
         rpzLines = null;
     }
 
+    function getRpzCount() {
+        var requestEndpoint = RPZ_ENDPOINT + WHERE + FORMAT + GET_COUNT;
+        var ajaxRequest = new XMLHttpRequest();
+        ajaxRequest.onload = storeCount;
+        ajaxRequest.onerror = ajaxFailure;
+        ajaxRequest.open("GET", requestEndpoint, false);
+        ajaxRequest.send();
+    }
+
+    function storeCount() {
+        var count = JSON.parse(this.responseText).count;
+        if (count) {
+            assetCount = count;
+        }
+    }
+
     function getRpzs() {
-        var max = 3308;
+        var max = 1000;
         var offset = 0;
-        var recordCount = 1000;
+        var recordCount = assetCount;
         while (recordCount > 0) {
             var offsetParam = resultOffset + offset;
             var maxRecordsParam = maxResults + max;
-            var requestEndpoint = rpzEndpoint + offsetParam + maxRecordsParam;
+            var requestEndpoint = RPZ_ENDPOINT + offsetParam + maxRecordsParam + WHERE + FORMAT + GET_GEOMETRY + OUTPUT_SPATIAL_REFERENCE + OUTPUT_FIELDS;
             var ajaxRequest = new XMLHttpRequest();
             ajaxRequest.onload = createRpzLines;
             ajaxRequest.onerror = ajaxFailure;
@@ -51,7 +74,7 @@
                 }
             });
             response = response.features;
-            
+
             while (response.length > 0) {
                 var rpz = response.pop();
                 if (rpz.geometry) {
@@ -66,17 +89,16 @@
     function ajaxFailure() {
         alert("oops!");
     }
-    
+
     function addPath(pathCoords, dataAttributes) {
         var spacePath = {
-            "path": pathCoords,
-            "geodesic": true,
-            "strokeOpacity": 1.0,
-            "strokeWeight": 2,
-            "strokeColor":"#00a661",
+            path: pathCoords,
+            geodesic: true,
+            strokeOpacity: 1.0,
+            strokeWeight: 2,
+            strokeColor: "#00a661",
             attributes: dataAttributes
         };
         rpzLines.push(spacePath);
     }
-
 })();
