@@ -60,6 +60,18 @@ body, html {
     font-size: 12px;
 }
 
+#closeButton { 
+        height: 0;
+        width: 0;
+        padding: 0;
+    }
+    
+    #menuButton {
+        height: 0;
+        width: 0;
+        padding: 0;
+    }
+
 #aboutText {
     visibility: hidden;
     width: 50%;
@@ -174,11 +186,9 @@ fieldset {
 }
 
 /* Computer */
-@media screen and (min-width: 1240px) {
+@media screen and (min-width: 1024px) {
     #sidebar {
-        position: absolute;
-        left: 0;
-        top: 0;
+        float: left;
         height: 100%;
         max-width: 20%;
     }
@@ -200,13 +210,13 @@ fieldset {
     }
     
     #map {
-        float: right;
+        float: left;
         height: 100%;
         width: 60%;
     }
     
     #legend {
-        float: right;
+        float: left;
         height: 100%;
         width: 20%;
     }
