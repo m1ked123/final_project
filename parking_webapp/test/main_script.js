@@ -26,23 +26,26 @@
     var baseGeocodingUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
     var currInfoWindow = null;
-    
+
     var curbSpacePolylines = [];
-    var payStationPoints = [];
     var rpzPolylines = [];
 
     var locationMarker = null;
 
     var userLocationCircle = null;
 
-    var tempStationPoints = [];
+
     var tempPolylines = [];
     var tempRpzs = [];
     var timers = [];
-	
-	var tempGarages = [];
-	var nondisplayedGarages = [];
-	var displayedGarages = [];
+
+    var tempGarages = [];
+    var nondisplayedGarages = [];
+    var displayedGarages = [];
+
+    var tempPayStations = [];
+    var nondisplayedPayStations = [];
+    var displayedPayStations = [];
 
     var index = 0;
 
@@ -53,10 +56,14 @@
         script.defer = true;
         script.onload = initMap;
         document.head.appendChild(script);
-		
-		var garageLotCheckbox = document.getElementById("parkingGarages");
+
+        var garageLotCheckbox = document.getElementById("parkingGarages");
         garageLotCheckbox.disabled = true;
-		garageLotCheckbox.onclick = toggleParkingGarages;
+        garageLotCheckbox.onclick = toggleParkingGarages;
+
+        var payStationCheckbox = document.getElementById("payStations");
+        payStationCheckbox.disabled = true;
+        payStationCheckbox.onclick = togglePayStations;
 
         var infoButton = document.getElementById("expandButton");
         infoButton.onclick = showInfo;
@@ -80,12 +87,6 @@
         var rpzCheckbox = document.getElementById("rpzs");
         rpzCheckbox.checked = false;
         rpzCheckbox.disabled = true;
-
-        
-
-        var payStationCheckbox = document.getElementById("payStations");
-        payStationCheckbox.checked = false;
-        payStationCheckbox.disabled = true;
 
         addTimeIntervals();
     };
@@ -125,17 +126,22 @@
         currInfoWindow = null;
         locationMarker = null;
         userLocationCircle = null;
-        nondisplayedGarages = null;
         curbSpacePolylines = null;
-        payStationPoints = null;
         icons = null;
         units = null;
         conv_fact = null;
-        tempStationPoints = null;
         tempPolylines = null;
-        tempGarages = null;
         tempRpzs = null;
         rpzPolylines = null;
+        
+        tempGarages = null;
+        nondisplayedGarages = null;
+        displayedGarages = null;
+
+        tempPayStations = null;
+        nondisplayedPayStations = null;
+        displayedPayStations = null;
+
     }
 
     function converter(in_num) {
@@ -279,10 +285,10 @@
             zoom: 16,
             center: seattleLatLong
         });
-		loadParkingGarages();
-
+        loadParkingGarages();
+        loadPayStations();
         // loadCurbspaces();
-        // loadPayStations();
+
        	// loadRpzs();
     }
 
@@ -341,7 +347,7 @@
 	 * responsible for loading and managing data for locations of
 	 * parking garages in the City of Seattle.
 	 ***************************************************************/
-	function loadParkingGarages() {
+    function loadParkingGarages() {
         if (window.Worker) {
             var garageWorker = new Worker("garages_script.js");
             showSpinner("lotProgressSpinner");
@@ -356,46 +362,46 @@
         }
     }
 
-	function constructGarages(garageTimer) {
-		if (tempGarages.length > 0) {
-			var currGarage = tempGarages.pop();
-			var markerIcon = icons.PARKING_GARAGE;
-			if (currGarage.attributes.VACANT) {
-				markerIcon = icons.E_PARKING;
-			}
-			var infowindow = new google.maps.InfoWindow({
-				content: buildParkingGarageFlyout(currGarage)
-			});
-			var garageMarker = new google.maps.Marker({
-				position: currGarage.position,
-				icon: markerIcon
-			});
-			addFlyout(infowindow, garageMarker);
-			nondisplayedGarages.push(garageMarker);
-		} else {
-			window.clearInterval(garageTimer);
-			var garageLotCheckbox = document.getElementById("parkingGarages");
+    function constructGarages(garageTimer) {
+        if (tempGarages.length > 0) {
+            var currGarage = tempGarages.pop();
+            var markerIcon = icons.PARKING_GARAGE;
+            if (currGarage.attributes.VACANT) {
+                markerIcon = icons.E_PARKING;
+            }
+            var infowindow = new google.maps.InfoWindow({
+                content: buildParkingGarageFlyout(currGarage)
+            });
+            var garageMarker = new google.maps.Marker({
+                position: currGarage.position,
+                icon: markerIcon
+            });
+            addFlyout(infowindow, garageMarker);
+            nondisplayedGarages.push(garageMarker);
+        } else {
+            window.clearInterval(garageTimer);
+            var garageLotCheckbox = document.getElementById("parkingGarages");
             if (garageLotCheckbox.checked) {
                 garageTimer = window.setInterval(function() {
                     addGaragesToMap(garageTimer);
                 }, 5);
             } else {
-				hideSpinner("lotProgressSpinner");
-				garageLotCheckbox.disabled = false;
-			}
-		}
+                hideSpinner("lotProgressSpinner");
+                garageLotCheckbox.disabled = false;
+            }
+        }
     }
 
-	function toggleParkingGarages() {
+    function toggleParkingGarages() {
         if (this.checked) {
-			this.disabled = true;
+            this.disabled = true;
             showSpinner("lotProgressSpinner");
             var garageMarkerTimer = window.setInterval(function() {
                 addGaragesToMap(garageMarkerTimer);
             }, 5);
-			
+
         } else {
-			this.disabled = true;
+            this.disabled = true;
             showSpinner("lotProgressSpinner");
             var garageMarkerTimer = window.setInterval(function() {
                 removeGaragesFromMap(garageMarkerTimer);
@@ -403,33 +409,33 @@
         }
     }
 
-	function addGaragesToMap(garageTimer) {
-		if (nondisplayedGarages.length > 0) {
-			var garage = nondisplayedGarages.pop();
-			garage.setMap(outputMap);
-			displayedGarages.push(garage);
-		} else {
-			hideSpinner("lotProgressSpinner");
-			var garageLotCheckbox = document.getElementById("parkingGarages");
-			garageLotCheckbox.disabled = false;
+    function addGaragesToMap(garageTimer) {
+        if (nondisplayedGarages.length > 0) {
+            var garage = nondisplayedGarages.pop();
+            garage.setMap(outputMap);
+            displayedGarages.push(garage);
+        } else {
+            hideSpinner("lotProgressSpinner");
+            var garageLotCheckbox = document.getElementById("parkingGarages");
+            garageLotCheckbox.disabled = false;
             window.clearInterval(garageTimer);
-		}
+        }
     }
 
     function removeGaragesFromMap(garageTimer) {
         if (displayedGarages.length > 0) {
-			var garage = displayedGarages.pop();
-			garage.setMap(null);
-			nondisplayedGarages.push(garage);
-		} else {
-			hideSpinner("lotProgressSpinner");
-			var garageLotCheckbox = document.getElementById("parkingGarages");
-			garageLotCheckbox.disabled = false;
+            var garage = displayedGarages.pop();
+            garage.setMap(null);
+            nondisplayedGarages.push(garage);
+        } else {
+            hideSpinner("lotProgressSpinner");
+            var garageLotCheckbox = document.getElementById("parkingGarages");
+            garageLotCheckbox.disabled = false;
             window.clearInterval(garageTimer);
-		}
+        }
     }
 
-	function buildParkingGarageFlyout(facility) {
+    function buildParkingGarageFlyout(facility) {
         var attributes = facility.attributes;
         var content = "<div id=\"content\">";
         var level = 1;
@@ -538,123 +544,80 @@
 	 * responsible for loading and managing data for the locations
 	 * of parking pay stations in the City of Seattle.
 	 ***************************************************************/
-	function loadPayStations() {
+    function loadPayStations() {
         if (window.Worker) {
             var payStationWorker = new Worker("paystations_script.js");
             showSpinner("payStationProgress");
             payStationWorker.postMessage("go");
             payStationWorker.onmessage = function(e) {
-                tempStationPoints = e.data;
-                var timer = window.setInterval(function() {
-                    constructPayStations(timer);
-
-                }, 300);
-                timers.push(timer);
-                console.log("paystations-->" + timers);
+                tempPayStations = e.data;
+                var payStationTimer = window.setInterval(function() {
+                    constructPayStations(payStationTimer);
+                }, 5);
                 payStationWorker.terminate();
             }
         }
     }
 
-	function constructPayStations(paystationTimer) {
-        if (index == tempStationPoints.length) {
-            window.clearInterval(paystationTimer);
-            tempStationPoints = [];
+    function constructPayStations(payStationTimer) {
+        if (tempPayStations.length > 0) {
+            var stationMarker = new google.maps.Marker({
+                position: tempPayStations.pop().position,
+                icon: icons.PARKING_METER
+            });
+            nondisplayedPayStations.push(stationMarker);
+        } else {
             var payStationCheckbox = document.getElementById("payStations");
-            payStationCheckbox.disabled = false;
-            payStationCheckbox.onchange = togglePayStations;
             if (payStationCheckbox.checked) {
-                var timer = window.setInterval(function() {
-                    addPayStationsToMap(timer);
-                }, 300);
+                payStationTimer = window.setInterval(function() {
+                    addPayStationsToMap(payStationTimer);
+                }, 5);
             } else {
                 hideSpinner("payStationProgress");
-                index = 0;
-            }
-        } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < tempStationPoints.length) {
-                    var stationMarker = new google.maps.Marker({
-                        position: tempStationPoints[i].position,
-                        icon: icons.PARKING_METER
-                    });
-                    payStationPoints.push(stationMarker);
-                } else {
-                    index = 0;
-                    window.clearInterval(paystationTimer);
-                    tempStationPoints = [];
-                    var payStationCheckbox = document.getElementById("payStations");
-                    payStationCheckbox.disabled = false;
-                    payStationCheckbox.onchange = togglePayStations;
-                    if (payStationCheckbox.checked) {
-                        var timer = window.setInterval(function() {
-                            addPayStationsToMap(timer);
-                        }, 300);
-                    } else {
-                        hideSpinner("payStationProgress");
-                        index = 0;
-                    }
-                    break;
-                }
+                payStationCheckbox.disabled = false;
             }
         }
     }
 
-	function togglePayStations() {
+    function togglePayStations() {
         if (this.checked) {
             showSpinner("payStationProgress");
-            var timer = window.setInterval(function() {
-                addPayStationsToMap(timer);
-            }, 300);
+            this.disabled = true;
+            var payStationTimer = window.setInterval(function() {
+                addPayStationsToMap(payStationTimer);
+            }, 5);
         } else {
             showSpinner("payStationProgress");
-            var timer = window.setInterval(function() {
-                removePayStationsFromMap(timer);
-            }, 300);
+            this.disabled = true;
+            var payStationTimer = window.setInterval(function() {
+                removePayStationsFromMap(payStationTimer);
+            }, 5);
         }
     }
 
-    function addPayStationsToMap(paystationTimer) {
-        if (index == payStationPoints.length) {
-            hideSpinner("payStationProgress");
-            index = 0;
-            window.clearInterval(paystationTimer);
+    function addPayStationsToMap(payStationTimer) {
+        if (nondisplayedPayStations.length > 0) {
+            var station = nondisplayedPayStations.pop();
+            station.setMap(outputMap);
+            displayedPayStations.push(station);
         } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < payStationPoints.length) {
-                    payStationPoints[i].setMap(outputMap);
-                } else {
-                    hideSpinner("payStationProgress");
-                    index = 0;
-                    window.clearInterval(paystationTimer);
-                    break;
-                }
-            }
+            hideSpinner("payStationProgress");
+            var payStationCheckbox = document.getElementById("payStations");
+            payStationCheckbox.disabled = false;
+            window.clearInterval(payStationTimer);
         }
     }
 
-    function removePayStationsFromMap(paystationTimer) {
-        if (index == payStationPoints.length) {
-            hideSpinner("payStationProgress");
-            index = 0;
-            window.clearInterval(paystationTimer);
+    function removePayStationsFromMap(payStationTimer) {
+        if (displayedPayStations.length > 0) {
+            var station = displayedPayStations.pop();
+            station.setMap(null);
+            nondisplayedPayStations.push(station);
         } else {
-            var start = index;
-            index += 1000;
-            for (var i = start; i < index; i++) {
-                if (i < payStationPoints.length) {
-                    payStationPoints[i].setMap(null);
-                } else {
-                    hideSpinner("payStationProgress");
-                    index = 0;
-                    window.clearInterval(paystationTimer);
-                    break;
-                }
-            }
+            hideSpinner("payStationProgress");
+            var payStationCheckbox = document.getElementById("payStations");
+            payStationCheckbox.disabled = false;
+            window.clearInterval(payStationTimer);
         }
     }
 
@@ -665,7 +628,7 @@
 	 * responsible for loading and managing data for categories of
 	 * different curbspaces in the City of Seattle.
 	 ***************************************************************/
-	function loadCurbspaces() {
+    function loadCurbspaces() {
         if (window.Worker) {
             var curbspaceWorker = new Worker("curbspace_script.js");
             showSpinner("curbProgressSpinner");
@@ -683,7 +646,7 @@
         }
     }
 
-	function constructPolylines(curbSpaceTimer) {
+    function constructPolylines(curbSpaceTimer) {
         if (index == tempPolylines.length) {
             window.clearInterval(curbSpaceTimer);
             index = 0;
@@ -733,7 +696,7 @@
         }
     }
 
-	function addPolylinesToMap(curbSpaceTimer) {
+    function addPolylinesToMap(curbSpaceTimer) {
         if (index == curbSpacePolylines.length) {
             hideSpinner("curbProgressSpinner");
             console.log("done");
@@ -797,7 +760,7 @@
 	* responsible for loading and managing data for the locations
 	* of restricted parking zones in the City of Seattle.
 	***************************************************************/
-	function loadRpzs() {
+    function loadRpzs() {
         if (window.Worker) {
             var rpzWorker = new Worker("rpz_script.js");
             showSpinner("rpzProgressSpinner");
