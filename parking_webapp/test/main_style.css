@@ -6,26 +6,36 @@
  *******************************************************************/
  
 body, html {
-    font-size: 15px;
-    margin: 0;
+    font-size: 16px;
     font-family: "Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
     padding: 0;
     height: 100%;
     width: 100%;
-    overflow: auto;
+    background-color: lightgray;
+    margin: 0;
 }
 
 #content_area {
+    background-color: white;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
     margin-left: auto;
     margin-right: auto;
-    padding: 12px;
-    width: 75%;
-    height: 100%;
+    padding: 0 12px 12px 12px;
+    margin-bottom: 32px;
+    overflow: hidden;
+    margin-top: 0;
+    width: 85%;
+    height: auto;
+}
+
+#sidebar {
+  width: 100%;
 }
 
 #map {
+    width: 100% !important;
     min-width: 320px;
-    min-height: 320px;
+    min-height: 480px;
 }
 
 .control {
@@ -61,16 +71,16 @@ body, html {
 }
 
 #closeButton { 
-        height: 0;
-        width: 0;
-        padding: 0;
-    }
+    height: 0;
+    width: 0;
+    padding: 0;
+}
     
-    #menuButton {
-        height: 0;
-        width: 0;
-        padding: 0;
-    }
+#menuButton {
+    height: 0;
+    width: 0;
+    padding: 0;
+}
 
 #aboutText {
     visibility: hidden;
@@ -102,6 +112,21 @@ fieldset {
     margin: 20px;
 }
 
+#legend {
+    background: white;
+    padding: 4px;
+}
+
+#legend li {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#legend img {
+    height: 24px;
+}
+
 /********************************************************************
  HEADER/FOOTER STYLES
  
@@ -120,6 +145,31 @@ fieldset {
     color: white;
 }
 
+header nav li {
+    display: inline-block;
+    list-style: outside none none;
+    padding: 20px;
+}
+
+header nav a {
+    color: white;
+    padding: 20px;
+    text-decoration: none;
+}
+
+header nav ul {
+    padding: 0;
+    margin: 0;
+    display: inline-block;
+    vertical-align: bottom;
+}
+
+header, footer {
+    background-color: rgba(70,70,70,1);
+    text-align: center;
+    margin: 0;
+}
+
 /********************************************************************
  MEDIA STYLES
  
@@ -129,7 +179,7 @@ fieldset {
  *******************************************************************/
 
 /* Mobile devices */
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 720px) {
     #sidebar {
         height: 100%;
         width: 0;
@@ -171,26 +221,23 @@ fieldset {
     }
     
     #content_area {
-        width: 75%;
+        width: 90%;
         overflow-x: hidden;
     }
     
     #map {
         width: 100%;
-    }
-    
-    #legend {
-        width: 100%;
-
+        left:0 !important;
+        top:0 !important;
     }
 }
 
 /* Computer */
-@media screen and (min-width: 1024px) {
+@media screen and (min-width: 1240px) {
     #sidebar {
         float: left;
         height: 100%;
-        max-width: 20%;
+        max-width: 25%;
     }
     
     #filters h1 {
@@ -210,18 +257,12 @@ fieldset {
     }
     
     #map {
-        float: left;
+        float: left !important;
+        margin-bottom: 100px;
         height: 100%;
-        width: 60%;
+        width: 75% !important;
     }
-    
-    #legend {
-        float: left;
-        height: 100%;
-        width: 20%;
-    }
-    
     #content_area {
-        width: 90%;
+        overflow: hidden;
     }
 }

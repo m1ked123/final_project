@@ -6,8 +6,14 @@
         E_PARKING: "assets/map_icons/parking.png",
         PARKING_METER: "assets/map_icons/parkingmeter.png",
         USER_LOCATION: "assets/map_icons/pin.png",
-        PROGRESS_SPINNER: "assets/progress_spinner.gif"
+        PROGRESS_SPINNER: "assets/progress_spinner.gif",
+        ERROR: "assets/notification_icons/notice.png",
+        PARKING_METER_FREE: "assets/map_icons/parking-meter-free.png",
+        PARKING_METER_PAID: "assets/map_icons/parking-meter-paid.png",
+        PARKING_METER_NODATA: "assets/map_icons/parking-meter-nodata.png"
     }
+
+    var WEEKDAYS = ["mon", "tues", "wed", "thurs", "fri", "monday", "tuesday", "wednesday", "thursday", "friday"];
 
     var units = {
         MILES: "miles",
@@ -84,38 +90,11 @@
         var findMeButton = document.getElementById("geolocation");
         findMeButton.onclick = tryGeolocation;
 
+        var showPricesButton = document.getElementById("showPrices");
+        showPricesButton.onclick = updatePaystationMarkers;
+
         addTimeIntervals();
     };
-
-    function addTimeIntervals() {
-        var timeOptions = document.getElementById("times");
-        var currentTime = 12;
-        var hour = 0;
-        var time = 0;
-        var tod = "AM";
-        for (var i = 0; i < 24; i++) {
-            if (i >= 12) {
-                tod = "PM";
-            }
-            for (var j = 0; j < 4; j++) {
-                var option = document.createElement("option");
-                var mins = (15 * j);
-                time = hour + mins;
-                option.innerHTML = currentTime + ":" + mins;
-                if (mins === 0) {
-                    option.innerHTML += "0 ";
-                }
-                option.innerHTML += tod;
-                option.value = time;
-                timeOptions.appendChild(option);
-            }
-            hour = (i + 1) * 100;
-            if (currentTime === 12) {
-                currentTime = 0;
-            }
-            currentTime += 1;
-        }
-    }
 
     window.onunload = function() {
         outputMap = null;
@@ -154,13 +133,294 @@
         loadPayStations();
         loadRpzs();
         loadCurbspaces();
+
+        var legend = document.getElementById("legend");
+
+        outputMap.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(
+            document.getElementById("legend"));
+
+        var eParkDiv = document.createElement("div");
+        eParkDiv.innerHTML = "<img src=\"" + icons.E_PARKING + "\"> " + "E-Parking Garage/Lot";
+        legend.appendChild(eParkDiv);
+        var garageDiv = document.createElement("div");
+        garageDiv.innerHTML = "<img src=\"" + icons.PARKING_GARAGE + "\"> " + "Parking Garage/Lot";
+        legend.appendChild(garageDiv);
+
+        var meterDiv = document.createElement("div");
+        var meterHeader = document.createElement("h2");
+        meterHeader.innerHTML = "Parking Meters";
+        meterDiv.appendChild(meterHeader);
+
+        var meterIconList = document.createElement("ul");
+
+        var meterIconItem = document.createElement("li");
+        var defaultMeterIconImage = document.createElement("img");
+        var iconLabel = document.createElement("p");
+        defaultMeterIconImage.alt = "default meter icon";
+        defaultMeterIconImage.src = icons.PARKING_METER;
+        iconLabel.appendChild(defaultMeterIconImage);
+        iconLabel.innerHTML += "Default Meter";
+        meterIconItem.appendChild(iconLabel);
+        meterIconList.appendChild(meterIconItem);
+
+        var meterIconItem = document.createElement("li");
+        var freeMeterIconImage = document.createElement("img");
+        var iconLabel = document.createElement("p");
+        freeMeterIconImage.alt = "free meter icon";
+        freeMeterIconImage.src = icons.PARKING_METER_FREE;
+        iconLabel.appendChild(freeMeterIconImage);
+        iconLabel.innerHTML += "Free Parking";
+        meterIconItem.appendChild(iconLabel);
+        meterIconList.appendChild(meterIconItem);
+
+        var meterIconItem = document.createElement("li");
+        var paidMeterIconImage = document.createElement("img");
+        var iconLabel = document.createElement("p");
+        paidMeterIconImage.alt = "paid meter icon";
+        paidMeterIconImage.src = icons.PARKING_METER_PAID;
+        iconLabel.appendChild(paidMeterIconImage);
+        iconLabel.innerHTML += "Paid Parking";
+        meterIconItem.appendChild(iconLabel);
+        meterIconList.appendChild(meterIconItem);
+
+        var meterIconItem = document.createElement("li");
+        var outsvrMeterIconImage = document.createElement("img");
+        var iconLabel = document.createElement("p");
+        outsvrMeterIconImage.alt = "out of service meter icon";
+        outsvrMeterIconImage.src = icons.PARKING_METER_NODATA;
+        iconLabel.appendChild(outsvrMeterIconImage);
+        iconLabel.innerHTML += "Meter Out of Service";
+        meterIconItem.appendChild(iconLabel);
+        meterIconList.appendChild(meterIconItem);
+
+        meterDiv.appendChild(meterIconList);
+
+        legend.appendChild(meterDiv);
+        var locDiv = document.createElement("div");
+        locDiv.innerHTML = "<img src=\"" + icons.USER_LOCATION + "\"> " + "Target Location";
+        legend.appendChild(locDiv);
+    }
+
+    function updatePaystationMarkers() {
+        if (displayedPayStations.length < 0) {
+            var timer = window.setInterval(function() {
+                addPayStationsToMap(timer, selectedDay, selectedTime)
+            }, 5);
+        }
+        var showPricesButton = document.getElementById("showPrices");
+        showPricesButton.disabled = true;
+        var daysCombobox = document.getElementById("days");
+        var timesCombobox = document.getElementById("times");
+        var selectedDay = daysCombobox.value;
+        var selectedTime = parseInt(timesCombobox.value);
+        showSpinner("showPricesSpinner");
+        var timer = window.setInterval(function() {
+            updateIcons(timer, selectedDay, selectedTime)
+        }, 5);
+    }
+
+    var index = 0;
+    function updateIcons(timer, selectedDay, selectedTime) {
+        if (displayedPayStations.length > index) {
+            var payStation = displayedPayStations[index];
+            payStation.marker.setMap(null);
+            if (isWeekday(selectedDay)) {
+                var weekDayStart1 = payStation.attributes.WKD_START1;
+                if (weekDayStart1) {
+                    weekDayStart1 = minTo24Hrs(weekDayStart1);
+                }
+                var weekDayEnd1 = payStation.attributes.WKD_END1;
+                if (weekDayEnd1) {
+                    weekDayEnd1 = minTo24Hrs(weekDayEnd1);
+                }
+                var weekDayStart2 = payStation.attributes.WKD_START2;
+                if (weekDayStart2) {
+                    weekDayStart2 = minTo24Hrs(weekDayStart2);
+                }
+                var weekDayEnd2 = payStation.attributes.WKD_END2;
+                if (weekDayEnd2) {
+                    weekDayEnd2 = minTo24Hrs(weekDayEnd2);
+                }
+                var weekDayStart3 = payStation.attributes.WKD_START3;
+                if (weekDayStart3) {
+                    weekDayStart3 = minTo24Hrs(weekDayStart3);
+                }
+                var weekDayEnd3 = payStation.attributes.WKD_END3;
+                if (weekDayEnd3) {
+                    weekDayEnd3 = minTo24Hrs(weekDayEnd3);
+                }
+                var weekDayHours = [weekDayStart1, weekDayEnd1, weekDayStart2, weekDayEnd2, weekDayStart3, weekDayEnd3];
+                var weekDayRates = [payStation.attributes.WKD_RATE1, payStation.attributes.WKD_RATE2, payStation.attributes.WKD_RATE3];
+                var rate = 0;
+                var parkingRate = 0;
+                if (payStation.attributes.CURRENT_STATUS && payStation.attributes.CURRENT_STATUS === "INSVC") {
+                    for (var i = 0; i < weekDayHours.length; i += 2) {
+                        if (weekDayHours[i] && weekDayHours[i + 1] && selectedTime >= weekDayHours[i] && selectedTime < weekDayHours[i + 1]) {
+                            parkingRate = weekDayRates[rate];
+                            break;
+                        }
+                        rate++;
+                    }
+                    if (parkingRate > 0) {
+                        payStation.marker.icon = icons.PARKING_METER_PAID;
+                    } else if (parkingRate === 0) {
+                        payStation.marker.icon = icons.PARKING_METER_FREE;
+                    }
+                } else {
+                    payStation.marker.icon = icons.PARKING_METER_NODATA;
+                }
+            } else if (selectedDay.toLowerCase() == "sat") {
+                var satStart1 = payStation.attributes.SAT_START1;
+                if (satStart1) {
+                    satStart1 = minTo24Hrs(satStart1);
+                }
+                var satEnd1 = payStation.attributes.SAT_END1;
+                if (satEnd1) {
+                    satEnd1 = minTo24Hrs(satEnd1);
+                }
+                var satStart2 = payStation.attributes.SAT_START2;
+                if (satStart2) {
+                    satStart2 = minTo24Hrs(satStart2);
+                }
+                var satEnd2 = payStation.attributes.SAT_END2;
+                if (satEnd2) {
+                    satEnd2 = minTo24Hrs(satEnd2);
+                }
+                var satStart3 = payStation.attributes.SAT_START3;
+                if (satStart3) {
+                    satStart3 = minTo24Hrs(satStart3);
+                }
+                var satEnd3 = payStation.attributes.SAT_END3;
+                if (satEnd3) {
+                    satEnd3 = minTo24Hrs(satEnd3);
+                }
+                var satHours = [satStart1, satEnd1, satStart2, satEnd2, satStart3, satEnd3];
+                var satRates = [payStation.attributes.SAT_RATE1, payStation.attributes.SAT_RATE2, payStation.attributes.SAT_RATE3];
+                var rate = 0;
+                var parkingRate = 0;
+                if (payStation.attributes.CURRENT_STATUS && payStation.attributes.CURRENT_STATUS === "INSVC") {
+                    for (var i = 0; i < satHours.length; i += 2) {
+                        if (satHours[i] && satHours[i + 1] && selectedTime > satHours[i] && selectedTime < satHours[i + 1]) {
+                            parkingRate = satRates[rate];
+                        }
+                        rate++;
+                    }
+                    if (parkingRate > 0) {
+                        payStation.marker.icon = icons.PARKING_METER_PAID;
+                    } else if (parkingRate === 0) {
+                        payStation.marker.icon = icons.PARKING_METER_FREE;
+                    }
+                } else {
+                    payStation.marker.icon = icons.PARKING_METER_NODATA;
+                }
+            } else {
+                var sunStart1 = payStation.attributes.SUN_START1;
+                if (sunStart1) {
+                    sunStart1 = minTo24Hrs(sunStart1);
+                }
+                var sunEnd1 = payStation.attributes.SUN_END1;
+                if (sunEnd1) {
+                    sunEnd1 = minTo24Hrs(sunEnd1);
+                }
+                var sunStart2 = payStation.attributes.SUN_START2;
+                if (sunStart2) {
+                    sunStart2 = minTo24Hrs(sunStart2);
+                }
+                var sunEnd2 = payStation.attributes.SUN_END2;
+                if (sunEnd2) {
+                    sunEnd2 = minTo24Hrs(sunEnd2);
+                }
+                var sunStart3 = payStation.attributes.SUN_START3;
+                if (sunStart3) {
+                    sunStart3 = minTo24Hrs(sunStart3);
+                }
+                var sunEnd3 = payStation.attributes.SUN_END3;
+                if (sunEnd3) {
+                    sunEnd3 = minTo24Hrs(sunEnd3);
+                }
+                var sunHours = [sunStart1, sunEnd1, sunStart2, sunEnd2, sunStart3, sunEnd3];
+                var sunRates = [payStation.attributes.SUN_RATE1, payStation.attributes.SUN_RATE2, payStation.attributes.SUN_RATE3];
+                var rate = 0;
+                var parkingRate = 0;
+                if (payStation.attributes.CURRENT_STATUS && payStation.attributes.CURRENT_STATUS === "INSVC") {
+                    for (var i = 0; i < sunHours.length; i += 2) {
+                        if (sunHours[i] && sunHours[i + 1] && selectedTime > sunHours[i] && selectedTime < sunHours[i + 1]) {
+                            parkingRate = sunRates[rate];
+                        }
+                        rate++;
+                    }
+                    if (parkingRate > 0) {
+                        payStation.marker.icon = icons.PARKING_METER_PAID;
+                    } else if (parkingRate === 0) {
+                        payStation.marker.icon = icons.PARKING_METER_FREE;
+                    }
+                } else {
+                    payStation.marker.icon = icons.PARKING_METER_NODATA;
+                }
+            }
+            payStation.marker.setMap(outputMap);
+            index++;
+        } else {
+            window.clearInterval(timer);
+            var showPricesButton = document.getElementById("showPrices");
+            showPricesButton.disabled = false;
+            hideSpinner("showPricesSpinner");
+            index = 0;
+        }
+    }
+
+    function minTo24Hrs(mins) {
+        var min = mins;
+        var totalTime = 0;
+        totalTime = min % 60;
+        min = Math.floor(min / 60);
+        totalTime += min % 60 * 100;
+        return totalTime;
+    }
+
+    function isWeekday(day) {
+        for (var i = 0; i < WEEKDAYS.length; i++) {
+            if (day.toLowerCase() === WEEKDAYS[i].toLowerCase()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function addTimeIntervals() {
+        var timeOptions = document.getElementById("times");
+        var currentTime = 12;
+        var hour = 0;
+        var time = 0;
+        var tod = "AM";
+        for (var i = 0; i < 24; i++) {
+            if (i >= 12) {
+                tod = "PM";
+            }
+            for (var j = 0; j < 4; j++) {
+                var option = document.createElement("option");
+                var mins = (15 * j);
+                time = hour + mins;
+                option.innerHTML = currentTime + ":" + mins;
+                if (mins === 0) {
+                    option.innerHTML += "0 ";
+                }
+                option.innerHTML += tod;
+                option.value = time;
+                timeOptions.appendChild(option);
+            }
+            hour = (i + 1) * 100;
+            if (currentTime === 12) {
+                currentTime = 0;
+            }
+            currentTime += 1;
+        }
     }
 
     function converter(in_num) {
         var combo_num = document.getElementById("in_unit");
         var in_unit = combo_num.value;
         var meter_out = in_num;
-        alert(in_unit);
         if (in_unit === units.MILES) {
             meter_out = in_num / conv_fact.mi_to_m;
         }
@@ -170,7 +430,6 @@
         if (in_unit === units.KILOMETERS) {
             meter_out = in_num / conv_fact.km_to_m;
         }
-        alert(meter_out);
         return meter_out;
     }
 
@@ -191,6 +450,16 @@
     }
 
     function hideSpinner(targetSpinnerId) {
+        var spinner = document.getElementById(targetSpinnerId);
+        spinner.src = "";
+    }
+
+    function showError(targetSpinnerId) {
+        var spinner = document.getElementById(targetSpinnerId);
+        spinner.src = icons.ERROR;
+    }
+
+    function hideError(targetSpinnerId) {
         var spinner = document.getElementById(targetSpinnerId);
         spinner.src = "";
     }
@@ -230,7 +499,7 @@
                 };
 
                 outputMap.setCenter(pos);
-                addMarker(pos, null, icons.USER_LOCATION, null);
+                addMarker(pos, icons.USER_LOCATION);
                 if (radius) {
                     drawCircle(radius, pos);
                 }
@@ -245,7 +514,7 @@
 
     function handleLocationError(browserHasGeolocation, pos, circleRadius) {
         outputMap.setCenter(pos);
-        addMarker(pos, null, icons.USER_LOCATION, null);
+        addMarker(pos, icons.USER_LOCATION);
         if (circleRadius) {
             drawCircle(circleRadius, pos);
         }
@@ -271,7 +540,7 @@
 
     function geocodeAddress() {
         var address = document.getElementById("addr").value;
-        var geocodeEndpoint = baseGeocodingUrl + address;
+        var geocodeEndpoint = baseGeocodingUrl + encodeURIComponent(address);
         var ajaxRequest = new XMLHttpRequest();
         ajaxRequest.onload = processLocation;
         ajaxRequest.onerror = ajaxFailure;
@@ -285,77 +554,50 @@
         var latitude = jsonResponse.results[0].geometry.location.lat;
         var longitude = jsonResponse.results[0].geometry.location.lng;
         var position = { lat: latitude, lng: longitude };
-        addMarker(position, null, icons.USER_LOCATION, null);
+        addMarker(position, icons.USER_LOCATION);
         outputMap.setCenter(position);
         outputMap.setZoom(18);
         drawCircle(radius, position);
-    }
-
-    function addAssetsToMap(assetList) {
-        for (var i = 0; i < assetList.length; i++) {
-            assetList[i].setMap(outputMap);
-        }
-    }
-
-    function removeAssetsFromMap(assetList) {
-        for (var i = 0; i < assetList.length; i++) {
-            assetList[i].setMap(null);
-        }
-        if (currInfoWindow) {
-            currInfoWindow.close();
-            currInfoWindow = null;
-        }
     }
 
     function ajaxFailure() {
         alert("oops!");
     }
 
-    function addMarker(pointPosition, flyout, image, markerList) {
-        var marker = new google.maps.Marker({
-            position: pointPosition,
-            icon: image
-        });
-
-        if (markerList) {
-            markerList.push(marker);
+    function addMarker(pointPosition, image) {
+        if (locationMarker) {
+            locationMarker.setPosition(pointPosition);
         } else {
-            if (locationMarker) {
-                locationMarker.setMap(null);
-            }
-            locationMarker = marker;
-            locationMarker.setMap(outputMap);
-        }
-
-        if (flyout) {
-            marker.addListener('click', function() {
-                marker.flyout
-                flyout.open(outputMap, marker);
-                if (currInfoWindow) {
-                    currInfoWindow.close();
-                }
-                currInfoWindow = flyout;
+            locationMarker = new google.maps.Marker({
+                position: pointPosition,
+                icon: image,
+                map: outputMap
             });
         }
     }
 
-	/****************************************************************
-	 * PARKING GARAGES AND PARKING LOTS
-	 * 
-	 * This region of code contains all functions that are
-	 * responsible for loading and managing data for locations of
-	 * parking garages in the City of Seattle.
-	 ***************************************************************/
+    /****************************************************************
+     * PARKING GARAGES AND PARKING LOTS
+     * 
+     * This region of code contains all functions that are
+     * responsible for loading and managing data for locations of
+     * parking garages in the City of Seattle.
+     ***************************************************************/
     function loadParkingGarages() {
         if (window.Worker) {
             var garageWorker = new Worker("garages_script.js");
             showSpinner("lotProgressSpinner");
             garageWorker.postMessage("go");
             garageWorker.onmessage = function(e) {
-                tempGarages = e.data;
-                var garageTimer = window.setInterval(function() {
-                    constructGarages(garageTimer);
-                }, 5);
+                if (e.data.code) {
+                    alert(e.data.message + ". code: " + e.data.code);
+                    showError("lotProgressSpinner");
+                } else {
+                    tempGarages = e.data;
+                    var garageTimer = window.setInterval(function() {
+                        constructGarages(garageTimer);
+                    }, 5);
+                }
                 garageWorker.terminate();
             }
         }
@@ -376,7 +618,11 @@
                 icon: markerIcon
             });
             addFlyout(infowindow, garageMarker);
-            nondisplayedGarages.push(garageMarker);
+            var garageAsset = {
+                marker: garageMarker,
+                attributes: currGarage.attributes
+            }
+            nondisplayedGarages.push(garageAsset);
         } else {
             window.clearInterval(garageTimer);
             var garageLotCheckbox = document.getElementById("parkingGarages");
@@ -411,7 +657,7 @@
     function addGaragesToMap(garageTimer) {
         if (nondisplayedGarages.length > 0) {
             var garage = nondisplayedGarages.pop();
-            garage.setMap(outputMap);
+            garage.marker.setMap(outputMap);
             displayedGarages.push(garage);
         } else {
             hideSpinner("lotProgressSpinner");
@@ -424,7 +670,7 @@
     function removeGaragesFromMap(garageTimer) {
         if (displayedGarages.length > 0) {
             var garage = displayedGarages.pop();
-            garage.setMap(null);
+            garage.marker.setMap(null);
             nondisplayedGarages.push(garage);
         } else {
             hideSpinner("lotProgressSpinner");
@@ -536,23 +782,28 @@
         return content;
     }
 
-	/****************************************************************
-	 * PARKING PAY STATIONS
-	 * 
-	 * This region of code contains all functions that are
-	 * responsible for loading and managing data for the locations
-	 * of parking pay stations in the City of Seattle.
-	 ***************************************************************/
+    /****************************************************************
+     * PARKING PAY STATIONS
+     * 
+     * This region of code contains all functions that are
+     * responsible for loading and managing data for the locations
+     * of parking pay stations in the City of Seattle.
+     ***************************************************************/
     function loadPayStations() {
         if (window.Worker) {
             var payStationWorker = new Worker("paystations_script.js");
             showSpinner("payStationProgress");
             payStationWorker.postMessage("go");
             payStationWorker.onmessage = function(e) {
-                tempPayStations = e.data;
-                var payStationTimer = window.setInterval(function() {
-                    constructPayStations(payStationTimer);
-                }, 5);
+                if (e.data.code) {
+                    alert(e.data.message + ". code: " + e.data.code);
+                    showError("payStationProgress");
+                } else {
+                    tempPayStations = e.data;
+                    var payStationTimer = window.setInterval(function() {
+                        constructPayStations(payStationTimer);
+                    }, 5);
+                }
                 payStationWorker.terminate();
             }
         }
@@ -560,11 +811,20 @@
 
     function constructPayStations(payStationTimer) {
         if (tempPayStations.length > 0) {
+            var station = tempPayStations.pop();
             var stationMarker = new google.maps.Marker({
-                position: tempPayStations.pop().position,
+                position: station.position,
                 icon: icons.PARKING_METER
             });
-            nondisplayedPayStations.push(stationMarker);
+            var stationAsset = {
+                marker: stationMarker,
+                attributes: station.attributes
+            }
+            var infowindow = new google.maps.InfoWindow({
+                content: buildPayStationFlyout(station)
+            });
+            addFlyout(infowindow, stationMarker);
+            nondisplayedPayStations.push(stationAsset);
         } else {
             var payStationCheckbox = document.getElementById("payStations");
             if (payStationCheckbox.checked) {
@@ -597,7 +857,7 @@
     function addPayStationsToMap(payStationTimer) {
         if (nondisplayedPayStations.length > 0) {
             var station = nondisplayedPayStations.pop();
-            station.setMap(outputMap);
+            station.marker.setMap(outputMap);
             displayedPayStations.push(station);
         } else {
             hideSpinner("payStationProgress");
@@ -610,7 +870,7 @@
     function removePayStationsFromMap(payStationTimer) {
         if (displayedPayStations.length > 0) {
             var station = displayedPayStations.pop();
-            station.setMap(null);
+            station.marker.setMap(null);
             nondisplayedPayStations.push(station);
         } else {
             hideSpinner("payStationProgress");
@@ -620,24 +880,245 @@
         }
     }
 
+    function buildPayStationFlyout(station) {
+        var attributes = station.attributes;
+        var content = "<div id=\"content\">";
+        if (attributes.CURRENT_STATUS && attributes.CURRENT_STATUS === "INSVC") {
+            content += "<h1>Hours</h1>";
+            if (attributes.START_TIME_WKD || attributes.START_TIME_SAT || attributes.START_TIME_SUN) {
+                content += "<ul>";
+                if (attributes.START_TIME_WKD && attributes.END_TIME_WKD) {
+                    content += "<li>Weekday Hours: " + attributes.START_TIME_WKD + " - " + attributes.END_TIME_WKD + "</li>";
+                } else {
+                    content += "<li>Free</li>";
+                }
+                if (attributes.START_TIME_SAT && attributes.END_TIME_SAT) {
+                    content += "<li>Saturday Hours: " + attributes.START_TIME_SAT + " - " + attributes.END_TIME_SAT + "</li>";
+                } else {
+                    content += "<li>Free</li>";
+                }
+                if (attributes.START_TIME_SUN && attributes.END_TIME_SUN) {
+                    content += "<li>Sunday Hours: " + attributes.START_TIME_SUN + " - " + attributes.END_TIME_SUN + "</li>";
+                } else {
+                    content += "<li>Free</li>";
+                }
+                content += "</ul>";
+            }
+            if (attributes.PEAK_HOUR) {
+                content += "<h2>Peak Hours</h2>";
+                content += "<ul><li>" + attributes.PEAK_HOUR + "</li></ul>";
+            }
+            content += "<h2>Weekday Rates</h2>";
+            content += "<ul>";
+            if (attributes.WKD_RATE1 || attributes.WKD_RATE2 || attributes.WKD_RATE3) {
 
-	/***************************************************************
-	* RESTRICTED PARKING ZONES (RPZs)
-	* 
-	* This region of code contains all functions that are
-	* responsible for loading and managing data for the locations
-	* of restricted parking zones in the City of Seattle.
-	***************************************************************/
+                var tod = "AM"
+                if (attributes.WKD_RATE1) {
+                    var wkdStart1 = Math.ceil(attributes.WKD_START1 / 60);
+                    var wkdEnd1 = Math.ceil(attributes.WKD_END1 / 60);
+                    if (wkdStart1 > 12) {
+                        wkdStart1 = wkdStart1 % 12;
+                        tod = "PM";
+                    }
+                    var startString = wkdStart1 + ":00" + tod;
+                    tod = "AM";
+                    if (wkdEnd1 > 12) {
+                        wkdEnd1 = wkdEnd1 % 12;
+                        tod = "PM";
+                    }
+                    var endString = wkdEnd1 + ":00" + tod;
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.WKD_RATE1 + "</li>";
+                }
+                if (attributes.WKD_RATE2) {
+                    tod = "AM"
+                    var wkdStart2 = Math.ceil(attributes.WKD_START2 / 60);
+                    var wkdEnd2 = Math.ceil(attributes.WKD_END2 / 60);
+                    if (wkdStart2 > 12) {
+                        wkdStart2 = wkdStart2 % 12;
+                        tod = "PM";
+                    }
+                    var startString = wkdStart2 + ":00" + tod;
+                    tod = "AM";
+                    if (wkdEnd2 > 12) {
+                        wkdEnd2 = wkdEnd2 % 12;
+                        tod = "PM";
+                    }
+                    var endString = wkdEnd2 + ":00" + tod;
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.WKD_RATE2 + "</li>";
+                }
+                if (attributes.WKD_RATE3) {
+                    tod = "AM"
+                    var wkdStart3 = Math.ceil(attributes.WKD_START3 / 60);
+                    var wkdEnd3 = Math.ceil(attributes.WKD_END3 / 60);
+                    if (wkdStart3 > 12) {
+                        wkdStart3 = wkdStart3 % 12;
+                        tod = "PM";
+                    }
+                    var startString = wkdStart3 + ":00" + tod;
+
+                    tod = "AM";
+                    if (wkdEnd3 > 12) {
+                        wkdEnd3 = wkdEnd3 % 12;
+                        tod = "PM";
+                    }
+                    var endString = wkdEnd3 + ":00" + tod;
+
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.WKD_RATE3 + "</li>";
+                }
+            } else {
+                content += "<li>Parking is free all day!</li>";
+            }
+            content += "</ul>";
+            content += "<h2>Saturday Rates</h2>";
+            content += "<ul>";
+            if (attributes.SAT_RATE1 || attributes.SAT_RATE2 || attributes.SAT_RATE3) {
+
+                var tod = "AM"
+                if (attributes.SAT_RATE1) {
+                    var satStart1 = Math.ceil(attributes.SAT_START1 / 60);
+                    var satEnd1 = Math.ceil(attributes.SAT_END1 / 60);
+                    if (satStart1 > 12) {
+                        satStart1 = satStart1 % 12;
+                        tod = "PM";
+                    }
+                    var startString = satStart1 + ":00" + tod;
+                    tod = "AM";
+                    if (wkdEnd1 > 12) {
+                        satEnd1 = satEnd1 % 12;
+                        tod = "PM";
+                    }
+                    var endString = satEnd1 + ":00" + tod;
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.SAT_RATE1 + "</li>";
+                }
+                if (attributes.SAT_RATE2) {
+                    tod = "AM"
+                    var satStart2 = Math.ceil(attributes.SAT_START2 / 60);
+                    var satEnd2 = Math.ceil(attributes.SAT_END2 / 60);
+                    if (satStart2 > 12) {
+                        satStart2 = satStart2 % 12;
+                        tod = "PM";
+                    }
+                    var startString = satStart2 + ":00" + tod;
+                    tod = "AM";
+                    if (satEnd2 > 12) {
+                        satEnd2 = satEnd2 % 12;
+                        tod = "PM";
+                    }
+                    var endString = satEnd2 + ":00" + tod;
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.SAT_RATE2 + "</li>";
+                }
+                if (attributes.SAT_RATE3) {
+                    tod = "AM"
+                    var satStart3 = Math.ceil(attributes.SAT_START3 / 60);
+                    var satEnd3 = Math.ceil(attributes.SAT_END3 / 60);
+                    if (satStart3 > 12) {
+                        satStart3 = satStart3 % 12;
+                        tod = "PM";
+                    }
+                    var startString = satStart3 + ":00" + tod;
+
+                    tod = "AM";
+                    if (satEnd3 > 12) {
+                        satEnd3 = satEnd3 % 12;
+                        tod = "PM";
+                    }
+                    var endString = satEnd3 + ":00" + tod;
+
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.SAT_RATE3 + "</li>";
+                }
+            } else {
+                content += "<li>Parking is free all day!</li>";
+            }
+            content += "</ul>";
+            content += "<h2>Sunday Rates</h2>";
+            content += "<ul>";
+            if (attributes.SUN_RATE1 || attributes.SUN_RATE2 || attributes.SUN_RATE3) {
+                var tod = "AM"
+                if (attributes.SUN_RATE1) {
+                    var satStart1 = Math.ceil(attributes.SAT_START1 / 60);
+                    var satEnd1 = Math.ceil(attributes.SAT_END1 / 60);
+                    if (satStart1 > 12) {
+                        satStart1 = satStart1 % 12;
+                        tod = "PM";
+                    }
+                    var startString = satStart1 + ":00" + tod;
+                    tod = "AM";
+                    if (wkdEnd1 > 12) {
+                        satEnd1 = satEnd1 % 12;
+                        tod = "PM";
+                    }
+                    var endString = satEnd1 + ":00" + tod;
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.SAT_RATE1 + "</li>";
+                }
+                if (attributes.SUN_RATE2) {
+                    tod = "AM"
+                    var satStart2 = Math.ceil(attributes.SAT_START2 / 60);
+                    var satEnd2 = Math.ceil(attributes.SAT_END2 / 60);
+                    if (satStart2 > 12) {
+                        satStart2 = satStart2 % 12;
+                        tod = "PM";
+                    }
+                    var startString = satStart2 + ":00" + tod;
+                    tod = "AM";
+                    if (satEnd2 > 12) {
+                        satEnd2 = satEnd2 % 12;
+                        tod = "PM";
+                    }
+                    var endString = satEnd2 + ":00" + tod;
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.SAT_RATE2 + "</li>";
+                }
+                if (attributes.SUN_RATE3) {
+                    tod = "AM"
+                    var satStart3 = Math.ceil(attributes.SAT_START3 / 60);
+                    var satEnd3 = Math.ceil(attributes.SAT_END3 / 60);
+                    if (satStart3 > 12) {
+                        satStart3 = satStart3 % 12;
+                        tod = "PM";
+                    }
+                    var startString = satStart3 + ":00" + tod;
+
+                    tod = "AM";
+                    if (satEnd3 > 12) {
+                        satEnd3 = satEnd3 % 12;
+                        tod = "PM";
+                    }
+                    var endString = satEnd3 + ":00" + tod;
+
+                    content += "<li>Between " + startString + " and " + endString + ": $" + attributes.SAT_RATE3 + "</li>";
+                }
+            } else {
+                content += "<li>Parking is free all day!</li>";
+            }
+            content += "</ul>";
+        } else {
+            content += "<h1>Meter Currently Out of Service</h1>";
+        }
+        content += "</div>";
+        return content;
+    }
+
+    /***************************************************************
+    * RESTRICTED PARKING ZONES (RPZs)
+    * 
+    * This region of code contains all functions that are
+    * responsible for loading and managing data for the locations
+    * of restricted parking zones in the City of Seattle.
+    ***************************************************************/
     function loadRpzs() {
         if (window.Worker) {
             var rpzWorker = new Worker("rpz_script.js");
             showSpinner("rpzProgressSpinner");
             rpzWorker.postMessage("go");
             rpzWorker.onmessage = function(e) {
-                tempRpzs = e.data;
-                var rpzTimer = window.setInterval(function() {
-                    constructRpzs(rpzTimer);
-                }, 5);
+                if (e.data.code) {
+                    alert(e.data.message + ". code: " + e.data.code);
+                    showError("rpzProgressSpinner");
+                } else {
+                    tempRpzs = e.data;
+                    var rpzTimer = window.setInterval(function() {
+                        constructRpzs(rpzTimer);
+                    }, 5);
+                }
                 rpzWorker.terminate();
             }
         }
@@ -709,23 +1190,28 @@
         }
     }
 
-	/***************************************************************
-	 * CURBSPACES
-	 * 
-	 * This region of code contains all functions that are
-	 * responsible for loading and managing data for categories of
-	 * different curbspaces in the City of Seattle.
-	 ***************************************************************/
+    /***************************************************************
+     * CURBSPACES
+     * 
+     * This region of code contains all functions that are
+     * responsible for loading and managing data for categories of
+     * different curbspaces in the City of Seattle.
+     ***************************************************************/
     function loadCurbspaces() {
         if (window.Worker) {
             var curbspaceWorker = new Worker("curbspace_script.js");
             showSpinner("curbProgressSpinner");
             curbspaceWorker.postMessage("go");
             curbspaceWorker.onmessage = function(e) {
-                tempCurbspaces = e.data;
-                var curbspaceTimer = window.setInterval(function() {
-                    constructCubspaces(curbspaceTimer);
-                }, 5);
+                if (e.data.code) {
+                    alert(e.data.message + ". code: " + e.data.code);
+                    showError("curbProgressSpinner");
+                } else {
+                    tempCurbspaces = e.data;
+                    var curbspaceTimer = window.setInterval(function() {
+                        constructCubspaces(curbspaceTimer);
+                    }, 5);
+                }
                 curbspaceWorker.terminate();
             }
         }

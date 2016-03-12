@@ -59,25 +59,44 @@
     }
 
     function createPayStationsPoints() {
-        var response = JSON.parse(this.responseText).features;
-        for (var i = 0; i < response.length; i++) {
-            var payStation = response[i];
-            if (!isNaN(payStation.geometry.y) && !isNaN(payStation.geometry.x)) {
-                var pointPos = {
-                    lat: payStation.geometry.y,
-                    lng: payStation.geometry.x
-                };
-                var payStationPoint = {
-                    position: pointPos,
-                    attributes: payStation.attributes
+        var responseError = JSON.parse(this.responseText).error;
+        if (!responseError) {
+            var response = JSON.parse(this.responseText).features;
+
+            for (var i = 0; i < response.length; i++) {
+                var payStation = response[i];
+                if (!isNaN(payStation.geometry.y) && !isNaN(payStation.geometry.x)) {
+                    var pointPos = {
+                        lat: payStation.geometry.y,
+                        lng: payStation.geometry.x
+                    };
+                    var payStationPoint = {
+                        position: pointPos,
+                        attributes: payStation.attributes
+                    }
+                    payStationPoints.push(payStationPoint);
                 }
-                payStationPoints.push(payStationPoint);
             }
+        } else {
+            var errorCode = null;
+            var errorMessage = null;
+            if (responseError.code) {
+                errorCode = responseError.code;
+                errorMessage = responseError.message;
+            } else {
+                errorCode = responseError;
+                errorMessage = "Something went wrong!";
+            }
+            postMessage({
+                error: true,
+                message: errorMessage,
+                code: errorCode
+            });
         }
     }
 
     function ajaxFailure() {
-        alert("oops!");
+        console.log("oops!");
     }
 
 })();

@@ -82,12 +82,25 @@
                 }
             }
         } else {
-            console.log("something went wrong: " + responseError.code);
+            var errorCode = null;
+            var errorMessage = null;
+            if (responseError.code) {
+                errorCode = responseError.code;
+                errorMessage = responseError.message;
+            } else {
+                errorCode = responseError;
+                errorMessage = "Something went wrong!";
+            }
+            postMessage({
+                error: true,
+                message: errorMessage,
+                code: errorCode
+            });
         }
     }
 
     function ajaxFailure() {
-        alert("oops!");
+        console.log("oops!");
     }
 
     function addPath(pathCoords, dataAttributes) {
