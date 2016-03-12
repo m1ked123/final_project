@@ -36,11 +36,16 @@ body, html {
     width: 100% !important;
     min-width: 320px;
     min-height: 480px;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
 }
 
 .control {
     float: left;
     clear: left;
+}
+
+.control img {
+    height: 16px;
 }
 
 #filters {
@@ -88,15 +93,14 @@ body, html {
 
 #aboutText {
     visibility: hidden;
-    width: 50%;
-    margin-left: auto;
-    margin-right: auto;
+    width: 90%;
     -o-transition: visibility .5s;
     -ms-transition: visibility .5s;
     -webkit-transition: visibility .5s;
     -moz-transition: visibility .5s;
     transition: visibility .5s;
-    overflow-y: auto;
+    overflow-y: scroll;
+    padding: 24px;
 }
 
 /********************************************************************
@@ -119,6 +123,7 @@ fieldset {
 #legend {
     background: white;
     padding: 4px;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
 }
 
 #legend li {
@@ -144,8 +149,9 @@ fieldset {
     height: 22px;
     -webkit-transition: height .5s, background-color .5s;
     -moz-transition: height .5s, background-color .5s;
+    -o-transition: height .5s, background-color .5s;
+    -ms-transition: height .5s, background-color .5s;
     transition: height .5s, background-color .5s;
-    background-color: rgba(70,70,70,1);
     color: white;
 }
 
@@ -170,8 +176,11 @@ header nav ul {
 
 header, footer {
     background-color: rgba(70,70,70,1);
-    text-align: center;
     margin: 0;
+}
+
+header {
+    text-align: center;
 }
 
 /********************************************************************
