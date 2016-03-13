@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Home</title>
+		<link rel="stylesheet" href="common.css" type="text/css" />
+	</head>
+	
+	<body>
+        <header>
+			<nav>
+				<ul>
+					<li><a href="">Home</a></li>
+					<li><a href="parking_web_app.html">Parking Availability</a></li>
+				</ul>
+			</nav>
+		</header>
+        <div class="mainContent">
+            <h1>Final Project Write Up</h1>
+            <h2>Introduction</h2>
+            <p>
+                The City of Seattle is currently one of the fastest growing urban areas in the US resulting in an increased amount of congestion. In order to deal with the rise in population, the city has planned to develop high density urban villages in an attempt to concentrate residential and commercial areas on the urban center’s periphery. As a result of this strategy many residents are dependent on commuting to and from the city for entertainment and work purposes, making parking a daily challenge. To address these concerns, we have employed an exploratory approach in the form of an interactive web app that allows users to find the parking options available by connecting them to publicly available data. The hope is to provide a means by which a commuter may improve his/her parking experience. In conjunction with our web map, we utilized a more static narrative approach to GIS by mapping average pay station hourly rates. This approach allowed us to see some trends in the geospatial relationship between parking rates and distance from the city center. We were also able to notice that pay stations with higher rates tended to remain “paid” for longer than those with lower rates.
+            </p>
+            <h2>Parking Types</h2>
+            <p>
+                We have identified three main types of parking infrastructures that are available for public use in Seattle. Private lots and garages encompass one of these categories. These are controlled areas that offer parking at incremental rates: most common being one hour, two hours, three hours, and all day. The key differentiation of this type of parking is the ability to store one's car in a controlled environment. A second type of infrastructure is the pay station parking that exists on the street. While pay station pricing can offer a bargain to most drivers, the availability and time restrictions of said parking pose limitations. Finally we identified open street parking defined by curbspace categories. One of those subcategories is the restricted parking zone (RPZ). These are areas that do not require a hourly parking fee; however, they do come with permitting restriction based on residency. The differentiation among the restrictions associated with these types of parking can cause confusion for commuters.
+            </p>
+            <h2>The Project</h2>
+            <p>
+                Our project takes the form of a dynamic website the provides a user with data about parking restrictions, rates and a set of other attributes that would be relevant to making informed parking decisions. To implement this project, publicly available data provided from the Seattle Department of Transportation (SDOT) about parking assets within the city limits were utilized. This data was incorporated into our website using a series of REST calls to SDOT’s ArcGIS Web Map Services in order to display the parking locations and their attributes on a Google Map. Together, with the styling defined by CSS and structure by HTML, the project provides a platform from which a user can can accomplish this. To increase the utility of the application to users, the map display is subject to a series of user inputs including address, time, distance, etc... This results in the most efficient and personalized depiction of parking within the city. Expanding upon this informative approach, we have also included an analytical map of average pay station parking rates. By doing this, we’ve been able to provide users with a representation of which areas in Seattle are generally most expensive to park. In conjunction with the dynamic web map, this “analysis map” provides a contextual framework for further addressing a larger scope issue by relying on a more static approach.
+            </p>
+            <div><img src="assets/screenshots/SeattleParkingRates.png"/></div>
+            <div><img src="assets/screenshots/UDistParking.png"/></div>
+            <h2>Conclusion</h2>
+            <p>
+                By approaching our subject from a user-centric perspective, we have been able to create a tool which will provide dynamic real-time information to ease an often stressful and confusing process. We’ve accomplished this through employing a multi-dimensional approach in our interactive web-map and analytical spatial exploration about the highest parking rates in Seattle. Ultimately we are happy to present users with our Seattle Parking Availability Application.
+            </p>
+        </div>
+	</body>
+</html>
