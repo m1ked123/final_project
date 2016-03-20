@@ -423,8 +423,8 @@
 	function drawCircle(circRadius, pos) {
 		var new_radius = convertToMeters(circRadius);
 		if (userLocationCircle) {
-			userLocationCircle.setPosition(pos);
-			userLocationCircle.setRadius(new_radius);
+			userLocationCircle.setMap(null);
+            userLocationCircle = null;
 		}
 		userLocationCircle = new google.maps.Circle({
 			strokeColor: "#FF0000",
